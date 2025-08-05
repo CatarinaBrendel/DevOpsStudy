@@ -1,16 +1,10 @@
 .App {
-<<<<<<< HEAD
   text-align: center;
 }
 
 .App-logo {
   height: 40vmin;
   pointer-events: none;
-}
-
-=======
-  font-family: sans-serif;
-  padding: 2rem;
 }
 
 table {
@@ -27,13 +21,12 @@ th, td {
 th {
   background-color: #f4f4f4;
 }
->>>>>>> 37702d3 (Re-add frontend as regular directory, not submodule)
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
-<<<<<<< HEAD
 
 .App-header {
   background-color: #282c34;
@@ -58,5 +51,3 @@ th {
     transform: rotate(360deg);
   }
 }
-=======
->>>>>>> 37702d3 (Re-add frontend as regular directory, not submodule)
