@@ -25,6 +25,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
     - name: Install backend dependencies
+      working-directory: backend
       run: npm ci
 
     - name:  Lint backend
@@ -32,6 +33,7 @@ jobs:
       run: npm run lint
 
     - name: Run backend tests
+      working-directory: backend
       run: npm test
 
     - name: Install frontend dependencies
