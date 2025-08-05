@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import axios from 'axios';
 import './App.css';
 import StatusTable from './components/StatusTable';
 import RefreshButton from './components/RefreshButton';
