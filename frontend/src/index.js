@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+<<<<<<< HEAD
+=======
+import 'bootstrap/dist/css/bootstrap.min.css';
+>>>>>>> 37702d3 (Re-add frontend as regular directory, not submodule)
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

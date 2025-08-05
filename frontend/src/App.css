@@ -1,4 +1,5 @@
 .App {
+<<<<<<< HEAD
   text-align: center;
 }
 
@@ -7,11 +8,32 @@
   pointer-events: none;
 }
 
+=======
+  font-family: sans-serif;
+  padding: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f4f4f4;
+}
+>>>>>>> 37702d3 (Re-add frontend as regular directory, not submodule)
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
+<<<<<<< HEAD
 
 .App-header {
   background-color: #282c34;
@@ -36,3 +58,5 @@
     transform: rotate(360deg);
   }
 }
+=======
+>>>>>>> 37702d3 (Re-add frontend as regular directory, not submodule)
