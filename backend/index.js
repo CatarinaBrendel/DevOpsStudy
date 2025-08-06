@@ -41,7 +41,7 @@ app.get('/api', (req, res) => {
 });
 
 // Endpoint to get all services (GET /api/services)
-app.get('/api/services', (req, res) => {
+app.get('/api/servers', (req, res) => {
     db.all('SELECT * FROM servers ORDER BY created_at DESC', (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
@@ -51,24 +51,42 @@ app.get('/api/services', (req, res) => {
 }); 
 
 // Endpoint to add a new service (POST /api/services)
-app.post('/api/services', (req, res) => {
-    const { name, url } = req.body;
-    if (!name || !url) {
+app.post('/api/servers', (req, res) => {
+    const { serverName, serverUrl } = req.body;
+    
+    if (!serverName || !serverUrl) {
         return res.status(400).json({ error: 'Name and URL are required' });
     }   
 
     const stmt = db.prepare('INSERT INTO servers (name, url) VALUES (?, ?)');
-    stmt.run(name, url, function(err) {
+    stmt.run(serverName, serverUrl, function(err) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.status(201).json({ id: this.lastID, name, url });
+        res.status(201).json({ id: this.lastID, serverName, serverUrl });
     });
     stmt.finalize();
 });
 
+app.patch('/api/servers/:id', (req, res) => {
+  const id = req.params.id;
+  const { serverName, serverUrl } = req.body;
+
+  if (!serverName || !serverUrl) {
+    return res.status(400).json({ error: 'Name and URL required' });
+  }
+
+  const stmt = db.prepare('UPDATE servers SET name = ?, url = ? WHERE id = ?');
+  stmt.run(serverName, serverUrl, id, function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Server not found' });
+    res.status(200).json({ id, serverName, serverUrl });
+  });
+});
+
+
 // Endpoint to delete a service (DELETE /api/services/:id)
-app.delete('/api/services/:id', (req, res) => {
+app.delete('/api/servers/:id', (req, res) => {
     const id = req.params.id;   
     db.run('DELETE FROM servers WHERE id = ?', id, function(err) {
         if (err) {
