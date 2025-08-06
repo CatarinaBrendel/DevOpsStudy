@@ -1,4 +1,4 @@
-const runHealthChecks = require('../checkService'); // Adjust the path as necessary
+const runHealthChecks = require('../services/checkService'); 
 const axios = require('axios');
 
 jest.mock('axios');
