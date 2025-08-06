@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
-const checkService = require('./checkService'); // Assuming checkService is in the same directory
+const runHealthChecks = require('./checkService'); // Assuming checkService is in the same directory
 
 const app = express();
 const port = 3001;
@@ -120,65 +120,20 @@ app.get('/api/status', (req, res) => {
 
 // Endpoint to check the status of all services (POST /api/check)
 app.post('/api/check', (req, res) => {
-  db.all('SELECT * FROM servers;', (err, servers) => {
+  db.all('SELECT * FROM servers;', async (err, servers) => {
     if (err) {
       console.error('DB error:', err);
       return res.status(500).json({ error: 'Database error' });
     }
 
-    let results = [];
-    let remaining = servers.length;
-
-    if (remaining === 0) {
-      return res.json({ checked: 0, results: [] });
+    try {
+      const results = runHealthChecks(servers, db);
+      res.json({checked: results.length, results});
+    } catch (error) {
+      console.error('Error checking services:', error);
+      return res.status(500).json({ error: 'Error checking services' });
     }
-
-    servers.forEach((server) => {
-      const start = Date.now();
-      let responseTime;
-
-      axios
-        .get(server.url, { timeout: 5000 })
-        .then((response) => {
-          responseTime = Date.now() - start;
-          const status = response.status >= 200 && response.status < 400 ? 'UP' : 'DOWN';
-
-          updateStatus(server, status, responseTime);
-        })
-        .catch(() => {
-          responseTime = Date.now() - start;
-          updateStatus(server, 'DOWN', responseTime);
-        });
-
-      function updateStatus(server, status, responseTime) {
-        console.log(`ID: ${server.id}, Server: ${server.server_id}, Status: ${status}, Response Time: ${responseTime}ms`);
-        // Insert into service_status
-        db.run(
-          `INSERT INTO service_status (server_id, status, response_time) VALUES (?, ?, ?);`,
-          [server.id, status, responseTime]
-        );
-
-        // Update servers table
-        db.run(
-          `UPDATE servers SET status = ?, response_time = ?, last_checked = CURRENT_TIMESTAMP WHERE id = ?;`,
-          [status, responseTime, server.id]
-        );
-
-        results.push({
-          id: server.id,
-          name: server.name,
-          status,
-          responseTime,
-        });
-
-        remaining--;
-
-        if (remaining === 0) {
-          res.json({ checked: results.length, results });
-        }
-      }
-    });
-  });
+});
 });
 
 app.listen(port, () => {
