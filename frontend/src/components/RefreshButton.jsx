@@ -7,7 +7,7 @@ const RefreshButton = ({onRefresh}) => {
   const triggerCheck = async () => {
     setLoading(true);
     try {
-      await axios.post('http://localhost:3001/check');
+      await axios.post('http://localhost:3001/api/check');
       onRefresh(); // Refresh data after check
     } catch (error) {
       console.error('Error triggering health check:', error);

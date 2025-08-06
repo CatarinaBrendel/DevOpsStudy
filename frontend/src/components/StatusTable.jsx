@@ -9,7 +9,7 @@ const StatusTable = ({refreshKey}) => {
   
   const fetchStatusData = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/status');
+      const response = await axios.get('http://localhost:3001/api/status');
       setStatusData(response.data);
     } catch (error) {
       console.error('Error fetching status data:', error);
