@@ -41,7 +41,8 @@ const ServerRow = ({ server, onDelete, onCheck, onUpdate }) => {
                     {server.status || 'UNKNOWN'}
                 </span>
             </td>
-            <td>{server.responseTime ?? '-'} ms</td>
+            <td>{server.response_time ?? '-'} ms</td>
+            <td>{server.last_checked ?? '-'}</td>
             <td>
                 {isEditing ? (
                     <>

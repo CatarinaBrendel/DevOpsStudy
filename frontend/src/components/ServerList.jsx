@@ -14,6 +14,7 @@ const ServerList = ({ servers, onDelete, onCheck, onUpdate }) => {
                     <th className="text-left">IP Address</th>
                     <th className="text-left">Status</th>
                     <th className="text-left">Response Time</th>
+                    <th className="text-left">Last Checked</th>
                     <th className="text-left">Actions</th>
                 </tr>
             </thead>
