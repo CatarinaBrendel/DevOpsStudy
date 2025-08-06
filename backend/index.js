@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 //Connect to SQLite database
-const db = new sqlite3.Database('../data/status.db');
+const db = new sqlite3.Database('./data/status.db');
 
 //Create table if it doesn't exist
 db.serialize(() => {
