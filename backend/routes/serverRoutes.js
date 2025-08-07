@@ -38,6 +38,7 @@ router.post('/servers', (req, res) => {
     });
 });
 
+// Endpoint to update a service (PATCH /api/services/:id)
 router.patch('/servers/:id', (req, res) => {
   const id = req.params.id;
   const { serverName, serverUrl } = req.body;
@@ -72,11 +73,37 @@ router.delete('/servers/:id', (req, res) => {
 
 // Endpoint to get all service statuses (GET /api/status)
 router.get('/status', (req, res) => {  
-    db.all('SELECT * FROM service_status ORDER BY checked_at DESC LIMIT 10', (err, rows) => {
+    db.all('SELECT * FROM service_status ORDER BY timestamp DESC LIMIT 10', (err, rows) => {
         if (err) {
-         return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
         }
         res.json(rows);
+    });
+});
+
+//Endpoint to get the status of a specific service (GET /api/status/:id)
+router.post('/status/:id', (req, res) => {
+    const serverId = req.params.id;
+
+    db.get('SELECT * FROM servers WHERE id = ?', [serverId], async (err, row) => {
+        if (err) {
+            console.error('DB error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        if (!row) {
+            return res.status(404).json({ error: 'Service status not found' });
+        }
+
+        try {
+
+            const result = await runHealthChecks([row], db);
+            return res.json({result: result[0]});
+            
+        } catch (error) {
+            console.error('Error checking service:', error);
+            return res.status(500).json({ error: 'Error checking service' });
+        }
     });
 });
 
@@ -89,7 +116,7 @@ router.post('/check', (req, res) => {
     }
 
     try {
-      const results = runHealthChecks(servers, db);
+      const results = await runHealthChecks(servers, db);
       res.json({checked: results.length, results});
     } catch (error) {
       console.error('Error checking services:', error);
@@ -97,5 +124,6 @@ router.post('/check', (req, res) => {
     }
 });
 });
+
 
 module.exports = router;

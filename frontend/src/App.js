@@ -74,6 +74,25 @@ const fetchServers = async () => {
     }
   };
 
+  const handleItemStatusCheck = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/status/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }), 
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error checking service status: ${response.statusText}`);
+      } 
+
+      const data = await response.json();
+      fetchServers();
+    } catch (error) {
+      console.error('Error checking service status:', error);
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="mb-4">Service Status Dashboard</h1>
@@ -82,7 +101,7 @@ const fetchServers = async () => {
       <ServerList
         servers={servers}
         onDelete={handleDeleteServer}
-        onCheck={handleCheckServer}
+        onCheck={handleItemStatusCheck}
         onUpdate={handleUpdateServer}
       />
     </div>

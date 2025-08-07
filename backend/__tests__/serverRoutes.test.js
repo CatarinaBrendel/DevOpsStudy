@@ -13,31 +13,42 @@ let runAnsync;
 let closeAsync;
 let createdId;
 
-describe('Server API Endpoints', () => {
+beforeAll(async () => {
+    db = getDb(); // Get the database connection
+    runAnsync = util.promisify(db.run.bind(db));
     
-    beforeAll(async () => {
-        db = getDb(); // Get the database connection
-        runAnsync = util.promisify(db.run.bind(db));
-        closeAsync = util.promisify(db.close.bind(db));
-        
-        await runAnsync(`CREATE TABLE IF NOT EXISTS servers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            name TEXT NOT NULL, 
-            url TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT,
-            response_time INTEGER,
-            last_checked DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-        
-            app = require('../app'); // Import the Express app after setting up the database
-    });
+    await runAnsync(`CREATE TABLE IF NOT EXISTS servers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        name TEXT NOT NULL, 
+        url TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT,
+        response_time INTEGER,
+        last_checked DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
-    afterAll(async () => {
-        await closeAsync(); // Close the database connection
-    });
-
+    await runAnsync(`CREATE TABLE IF NOT EXISTS service_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        server_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        response_time INTEGER,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (server_id) REFERENCES servers(id)
+    )`);
+       
+    await runAnsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, [1, 'up', 100, new Date().toISOString()]);   
+    await runAnsync(`INSERT INTO servers (name, url, created_at, status, response_time, last_checked) VALUES (?, ?, ?, ?, ?, ?) `, ['Test Server Name', 'http://test.com', new Date().toISOString(), 'UP', 100, new Date().toISOString()]);
+    app = require('../app'); // Import the Express app after setting up the database
+});
+    
+afterAll(async () => {
+    db = getDb(); // Get the database connection
+    closeAsync = util.promisify(db.close.bind(db));
+    await closeAsync(); // Close the database connection
+});
+    
+describe('Server API Endpoints', () => {
     it('POST /api/servers should add new server', async () => {
-        try {
+            try {
             const res = await request(app)
             .post('/api/servers')
             .send({ serverName: 'Test Server', serverUrl: 'https://testserver.com'     
@@ -82,5 +93,23 @@ describe('Server API Endpoints', () => {
         expect(res.body).toMatchObject({
             id: Number(createdId)
         });
+    });
+});
+
+describe('POST /api/status/id', () => {
+    it('should run a health check and return the result', async () => {
+        const res = await request(app).post(`/api/status/${createdId}`);
+
+        console.log(res.body); // Log the response body for debugging
+
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.result).toEqual(
+            expect.objectContaining({
+                id: Number(createdId),
+                name: expect.any(String),
+                status: expect.any(String),
+                responseTime: null
+            })
+        );
     });
 });
