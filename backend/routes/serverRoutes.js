@@ -16,7 +16,6 @@ router.get('/servers', (req, res) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        console.log('Fetched rows from DB:', rows);
         res.json(rows);
     });
 }); 
