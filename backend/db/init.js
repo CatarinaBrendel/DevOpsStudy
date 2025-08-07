@@ -1,4 +1,5 @@
-const db = require('./index'); // Import the database connection
+const getDb = require('./index'); // Import the database connection
+const db = getDb();
 
 function initializeDatabase() {
     db.serialize(() => {

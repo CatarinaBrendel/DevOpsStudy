@@ -1,9 +1,15 @@
-# backend/Dockerfile
-FROM node:18-alpine
+FROM node:18
 
 WORKDIR /app
-COPY . .
+
+# Copy only package.json first to leverage Docker layer caching
+COPY package*.json ./
+
+# Install dependencies inside the container
 RUN npm install
 
-EXPOSE 3001
+# Now copy the rest of the source code
+COPY . .
+
+# Start the server
 CMD ["node", "index.js"]

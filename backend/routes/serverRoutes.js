@@ -1,5 +1,6 @@
 const express = require('express');
-const db = require('../db/index'); // Import the database connection
+const getDb = require('../db/index'); // Import the database connection
+const db = getDb(); // Get the database instance
 const runHealthChecks = require('../services/checkService');
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.get('/servers', (req, res) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
+        console.log('Fetched rows from DB:', rows);
         res.json(rows);
     });
 }); 
@@ -32,9 +34,9 @@ router.post('/servers', (req, res) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.status(201).json({ id: this.lastID, serverName, serverUrl });
+        res.status(201).json({ id: this.lastID, name: serverName, url: serverUrl });
+        stmt.finalize();
     });
-    stmt.finalize();
 });
 
 router.patch('/servers/:id', (req, res) => {
@@ -49,7 +51,8 @@ router.patch('/servers/:id', (req, res) => {
   stmt.run(serverName, serverUrl, id, function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Server not found' });
-    res.status(200).json({ id, serverName, serverUrl });
+    res.status(200).json({ id: Number(id), serverName, serverUrl });
+    stmt.finalize();
   });
 });
 
@@ -64,6 +67,7 @@ router.delete('/servers/:id', (req, res) => {
             return res.status(404).json({ error: 'Service not found' });
         }
         res.status(204).send();
+        this.finalize();
     });
 });
 
