@@ -67,7 +67,6 @@ router.delete('/servers/:id', (req, res) => {
             return res.status(404).json({ error: 'Service not found' });
         }
         res.status(204).send();
-        this.finalize();
     });
 });
 

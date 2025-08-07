@@ -22,7 +22,7 @@ const fetchServers = async () => {
     } catch (error) {
       console.error('Error fetching servers:', error);
     }
-  };  
+};  
 
   const handleAddServer = async ({serverName, serverUrl}) => {
     try {
@@ -35,7 +35,7 @@ const fetchServers = async () => {
     } catch (error) {
       console.error('Error adding server:', error);
     }
-  }
+  };
 
   const handleUpdateServer = async (id, updatedData) => {
     try {

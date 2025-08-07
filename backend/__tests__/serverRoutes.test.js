@@ -9,15 +9,20 @@ const util = require('util');
 
 let app;
 let db;
-let runAnsync;
+let runAsync;
 let closeAsync;
+let getAsync;
 let createdId;
+let insertedServerId;
 
 beforeAll(async () => {
     db = getDb(); // Get the database connection
-    runAnsync = util.promisify(db.run.bind(db));
+    runAsync = util.promisify(db.run.bind(db));
+    getAsync = util.promisify(db.get.bind(db));
+
+    await runAsync(`PRAGMA foreign_keys = ON`);
     
-    await runAnsync(`CREATE TABLE IF NOT EXISTS servers (
+    await runAsync(`CREATE TABLE IF NOT EXISTS servers (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT NOT NULL, 
         url TEXT NOT NULL,
@@ -26,17 +31,26 @@ beforeAll(async () => {
         response_time INTEGER,
         last_checked DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
-    await runAnsync(`CREATE TABLE IF NOT EXISTS service_status (
+    await runAsync(`CREATE TABLE IF NOT EXISTS service_status (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         server_id INTEGER NOT NULL,
         status TEXT NOT NULL,
         response_time INTEGER,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (server_id) REFERENCES servers(id)
+        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
     )`);
-       
-    await runAnsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, [1, 'up', 100, new Date().toISOString()]);   
-    await runAnsync(`INSERT INTO servers (name, url, created_at, status, response_time, last_checked) VALUES (?, ?, ?, ?, ?, ?) `, ['Test Server Name', 'http://test.com', new Date().toISOString(), 'UP', 100, new Date().toISOString()]);
+
+     // Clear tables to avoid conflicts
+    await runAsync(`DELETE FROM service_status`);
+    await runAsync(`DELETE FROM servers`);
+
+    
+    await runAsync(`INSERT INTO servers (name, url, created_at, status, response_time, last_checked) VALUES (?, ?, ?, ?, ?, ?) `, ['Test Server Name', 'http://test.com', new Date().toISOString(), 'UP', 100, new Date().toISOString()]);
+    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, [1, 'up', 100, new Date().toISOString()]);   
+    
+    const row = await getAsync('SELECT id FROM servers ORDER BY id DESC LIMIT 1');
+    insertedServerId = row.id;
+    
     app = require('../app'); // Import the Express app after setting up the database
 });
     
@@ -94,13 +108,27 @@ describe('Server API Endpoints', () => {
             id: Number(createdId)
         });
     });
+
+    it('DELETE /api/servers/:id should delete an existing server and return 204', async () => {
+        const res = await request(app).delete(`/api/servers/${insertedServerId}`);
+        expect(res.status).toBe(204);
+
+        // Confirm it's really gone
+        const deleted = await getAsync('SELECT * FROM servers WHERE id = ?', [insertedServerId]);
+        expect(deleted).toBeUndefined(); // or: expect(deleted).toBeFalsy();
+    });
+
+    it('DELETE should return 404 if server does not exist', async () => {
+        const res = await request(app).delete('/api/servers/999999');
+        console.log('Response body:', res.body); // Log the response body for debugging
+        expect(res.status).toBe(404);
+        expect(res.body.error).toMatch(/not found/i);
+    });
 });
 
 describe('POST /api/status/id', () => {
     it('should run a health check and return the result', async () => {
         const res = await request(app).post(`/api/status/${createdId}`);
-
-        console.log(res.body); // Log the response body for debugging
 
         expect(res.statusCode).toEqual(200);
         expect(res.body.result).toEqual(

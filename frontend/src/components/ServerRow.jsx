@@ -16,15 +16,17 @@ const ServerRow = ({ server, onDelete, onCheck, onUpdate }) => {
 
     return (
         <tr>
-            {isEditing ? (
-                <input
+            <td>
+                {isEditing ? (
+                    <input
                     className="form-control form-control-sm"
                     value={serverName}
                     onChange={(e) => setServerName(e.target.value)}
-                />
+                    />
                 ) : (
-                server.name
-            )}
+                    server.name
+                )}
+            </td>
             <td>
                {isEditing ? (
                     <input
@@ -49,7 +51,7 @@ const ServerRow = ({ server, onDelete, onCheck, onUpdate }) => {
                         <button className="btn btn-sm btn-success me-2" onClick={handleSave}>
                         Save
                         </button>
-                        <button className="btn btn-sm btn-secondary" onClick={() => setIsEditing(false)}>
+                        <button className="btn btn-sm btn-secondary me-2" onClick={() => setIsEditing(false)}>
                         Cancel
                         </button>
                     </>
@@ -61,7 +63,7 @@ const ServerRow = ({ server, onDelete, onCheck, onUpdate }) => {
                         <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => setIsEditing(true)}>
                         Edit
                         </button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(server.id)}>
+                        <button className="btn btn-sm btn-outline-danger me-2" onClick={() => onDelete(server.id)}>
                         Delete
                         </button>
                     </>
