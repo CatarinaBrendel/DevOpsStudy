@@ -103,6 +103,7 @@ const fetchServers = async () => {
         onDelete={handleDeleteServer}
         onCheck={handleItemStatusCheck}
         onUpdate={handleUpdateServer}
+        onCheckList={handleCheckServer}
       />
     </div>
   );
