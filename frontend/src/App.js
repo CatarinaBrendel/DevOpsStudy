@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
 import ServerList from './components/ServerList';
-import ServerRow from './components/ServerRow';
 import AddServerForm from './components/AddServerForm';
+import Sidebar from './components/Sidebar';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -14,7 +14,7 @@ function App() {
     fetchServers();
   }, []);
 
-const fetchServers = async () => {
+  const fetchServers = async () => {
     try {
       const response = await fetch(`${API_BASE}/servers`);
       const data = await response.json();
@@ -94,17 +94,17 @@ const fetchServers = async () => {
   };
 
   return (
-    <div className="container mt-4">
-      <h1 className="mb-4">Service Status Dashboard</h1>
-
-      <AddServerForm onAdd={handleAddServer} />
-      <ServerList
-        servers={servers}
-        onDelete={handleDeleteServer}
-        onCheck={handleItemStatusCheck}
-        onUpdate={handleUpdateServer}
-        onCheckList={handleCheckServer}
+    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', height: '100vh'   }}>
+      <Sidebar 
+        items={servers} 
+        selectedId={null} 
+        onsSelect={() => {}} 
+        onAddServer={handleAddServer} 
       />
+      <main style={{padding: 16}} className="main-content">
+        {/* placeholder for center/right panels */}
+        Selected:
+      </main>
     </div>
   );
 }
