@@ -126,8 +126,8 @@ describe('Server API Endpoints', () => {
     });
 });
 
-describe('POST /api/status/id', () => {
-    it('should run a health check and return the result', async () => {
+describe('Status API Endpoints', () => {
+    it('POST /api/status/id should run a health check and return the result', async () => {
         const res = await request(app).post(`/api/status/${createdId}`);
 
         expect(res.statusCode).toEqual(200);
@@ -138,6 +138,22 @@ describe('POST /api/status/id', () => {
                 status: expect.any(String),
                 responseTime: null
             })
+        );
+    });
+
+    it('POST /api/check should check all servers and return their statuses', async () => {
+        const res = await request(app).post('/api/check');
+        console.log('Response body:', res.body); // Log the response body for debugging
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.results).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: Number(createdId),
+                    name: 'Updated Test Server',
+                    status: 'DOWN',
+                    responseTime: null
+                })
+            ])
         );
     });
 });
