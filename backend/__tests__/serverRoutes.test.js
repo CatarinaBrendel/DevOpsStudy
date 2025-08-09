@@ -12,7 +12,6 @@ let db;
 let runAsync;
 let closeAsync;
 let getAsync;
-let allAsync;
 let createdId;
 let insertedServerId;
 
@@ -20,7 +19,6 @@ beforeAll(async () => {
     db = getDb(); // Get the database connection
     runAsync = util.promisify(db.run.bind(db));
     getAsync = util.promisify(db.get.bind(db));
-    allAsync = util.promisify(db.all.bind(db)) 
 
     await runAsync(`PRAGMA foreign_keys = ON`);
     
