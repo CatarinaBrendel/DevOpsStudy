@@ -74,6 +74,84 @@ router.get('/servers/:id/history', (req, res) => {
     });
 });
 
+// Endpoint to list the sumary information of specific service GET /api/servers/:id/sumary)
+router.get('/servers/:id/summary', (req, res) => {
+  const id = Number(req.params.id);
+  const days = Number(req.query.days) || 30;
+
+  // check server exists and get basic info
+  db.get(
+    'SELECT id, name, url, status, response_time, last_checked, created_at FROM servers WHERE id = ?',
+    [id],
+    (err, server) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!server) return res.status(404).json({ error: 'Server not found' });
+
+      const windowExpr = `datetime('now', '-' || ? || ' days')`;
+
+      // 1) counts for uptime
+      db.get(
+        `SELECT COUNT(*) AS total,
+                SUM(CASE WHEN status = 'UP' COLLATE NOCASE THEN 1 ELSE 0 END) AS up_count
+         FROM service_status
+         WHERE server_id = ? AND timestamp >= ${windowExpr}`,
+        [id, days],
+        (err1, counts) => {
+          if (err1) return res.status(500).json({ error: err1.message });
+
+          // 2) average response time for UP rows only
+          db.get(
+            `SELECT ROUND(AVG(response_time)) AS avg_ms
+             FROM service_status
+             WHERE server_id = ?
+               AND timestamp >= ${windowExpr}
+               AND status = 'UP' COLLATE NOCASE
+               AND response_time IS NOT NULL`,
+            [id, days],
+            (err2, avgRow) => {
+              if (err2) return res.status(500).json({ error: err2.message });
+
+              // 3) sparkline: time/value pairs
+              db.all(
+                `SELECT
+                   strftime('%Y-%m-%dT%H:%M:%fZ', timestamp) AS t,
+                   CASE
+                     WHEN status = 'UP' COLLATE NOCASE AND response_time IS NOT NULL THEN response_time
+                     ELSE 0
+                   END AS ms
+                 FROM service_status
+                 WHERE server_id = ?
+                   AND timestamp >= ${windowExpr}
+                 ORDER BY timestamp ASC
+                 LIMIT 1000`,
+                [id, days],
+                (err3, sparkRows) => {
+                  if (err3) return res.status(500).json({ error: err3.message });
+
+                  const total = counts?.total || 0;
+                  const upCount = counts?.up_count || 0;
+                  const uptimePercent = total
+                    ? Math.round((upCount / total) * 1000) / 10
+                    : null;
+
+                  res.json({
+                    server,
+                    days,
+                    uptimePercent,                // e.g., 99.9
+                    averageResponseMs: avgRow?.avg_ms ?? null,
+                    sparkline: sparkRows || []    // [{t, ms}, ...]
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+
 // Endpoint to update a service (PATCH /api/services/:id)
 router.patch('/servers/:id', (req, res) => {
   const id = req.params.id;

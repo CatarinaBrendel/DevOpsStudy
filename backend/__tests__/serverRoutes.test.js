@@ -146,6 +146,32 @@ describe('Server API Endpoints', () => {
         expect(res.body.length).toBeLessThanOrEqual(2);
     });
 
+    it('returns correct uptimePercent and averageResponseMs', async () => {
+        const res = await request(app)
+        .get(`/api/servers/${insertedServerId}/summary?days=30`)
+        .expect(200);
+
+        expect(res.body).toHaveProperty('server');
+        expect(res.body.server.id).toBe(insertedServerId);
+        expect(res.body).toHaveProperty('uptimePercent');
+        expect(res.body).toHaveProperty('averageResponseMs');
+        expect(res.body).toHaveProperty('sparkline');
+
+        // uptimePercent: 2 UP / 3 total = 66.7
+        expect(res.body.uptimePercent).toBeCloseTo(66.7, 1);
+
+        // averageResponseMs: (100 + 90) / 2 = 95
+        expect(res.body.averageResponseMs).toBe(95);
+
+        // sparkline: should have 3 entries with t & ms
+        expect(Array.isArray(res.body.sparkline)).toBe(true);
+        expect(res.body.sparkline.length).toBe(3);
+        res.body.sparkline.forEach(point => {
+        expect(point).toHaveProperty('t');
+        expect(point).toHaveProperty('ms');
+        });
+    });
+
 
     it('PATCH /api/servers/:id should update server', async () => {
         const res = await request(app)
