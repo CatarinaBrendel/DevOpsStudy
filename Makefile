@@ -10,7 +10,7 @@
 # make logs SERVICES=backend — tail logs.
 
 # ---- Config ----
-CACHE_DAYS ?= 2          # prune build cache older than N days
+CACHE_DAYS ?= 1          # prune build cache older than N days
 SERVICES ?=              # e.g., SERVICES="backend frontend"
 PROFILES ?=              # e.g., PROFILES="dev"
 

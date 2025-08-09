@@ -11,7 +11,7 @@ function initializeDatabase() {
                 server_id INTEGER NOT NULL,
                 status TEXT NOT NULL,
                 response_time INTEGER,
-                checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (server_id) REFERENCES servers(id)
             )`);
             
@@ -26,6 +26,18 @@ function initializeDatabase() {
                 response_time INTEGER,
                 last_checked DATETIME DEFAULT CURRENT_TIMESTAMP
             )
+            `);
+
+            // create idx_service_status_server_time index on service_status table
+            db.run(`
+                CREATE INDEX IF NOT EXISTS idx_service_status_server_time
+                ON service_status(server_id, timestamp);
+            `);
+            
+            // create idx_service_servers_last_checked index on servers table
+            db.run(`
+                CREATE INDEX IF NOT EXISTS idx_servers_last_checked
+                ON servers(last_checked);
             `);
             
         } catch (error) {
