@@ -1,14 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
-import ServerList from './components/ServerList';
-import AddServerForm from './components/AddServerForm';
 import Sidebar from './components/Sidebar';
 import { fetchSidebarItems } from './data/loadServers';
+import ServerDetails from './components/ServerDetails';
 
 const API_BASE = 'http://localhost:3001/api';
 
 function App() {
   const [servers, setServers] = useState([]);
+  const [selectedServerId, setSelectedServerId] = useState(null);
   
   //Load servers from API
   useEffect(() => {
@@ -101,13 +101,12 @@ function App() {
     <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', height: '100vh'   }}>
       <Sidebar 
         items={servers} 
-        selectedId={null} 
-        onSelect={() => {}} 
+        selectedId={selectedServerId} 
+        onSelect={setSelectedServerId} 
         onAddServer={handleAddServer}
       />
       <main style={{padding: 16}} className="main-content">
-        {/* placeholder for center/right panels */}
-        Selected:
+        {selectedServerId ? (<ServerDetails serverId={selectedServerId}/>) : (<div>Please selct a server</div>)}
       </main>
     </div>
   );

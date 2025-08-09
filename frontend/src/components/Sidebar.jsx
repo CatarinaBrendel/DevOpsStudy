@@ -61,7 +61,11 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) 
                 </div>
                 <nav className="sidebar__list" aria-label="Servers">
                     {filtered.map(server => (
-                        <button type="button" className="row" key={server.id}>
+                        <button 
+                            type="button" 
+                            className="row" 
+                            key={server.id}
+                            onClick={() => onSelect(server.id)}>
                             <div className="row__left">
                                 <StatusDot status={server.status} />
                                 <div className="row__text">

@@ -93,8 +93,8 @@ router.get('/servers/:id/summary', (req, res) => {
       db.get(
         `SELECT COUNT(*) AS total,
                 SUM(CASE WHEN status = 'UP' COLLATE NOCASE THEN 1 ELSE 0 END) AS up_count
-         FROM service_status
-         WHERE server_id = ? AND timestamp >= ${windowExpr}`,
+          FROM service_status
+          WHERE server_id = ? AND timestamp >= ${windowExpr}`,
         [id, days],
         (err1, counts) => {
           if (err1) return res.status(500).json({ error: err1.message });
@@ -102,11 +102,11 @@ router.get('/servers/:id/summary', (req, res) => {
           // 2) average response time for UP rows only
           db.get(
             `SELECT ROUND(AVG(response_time)) AS avg_ms
-             FROM service_status
-             WHERE server_id = ?
-               AND timestamp >= ${windowExpr}
-               AND status = 'UP' COLLATE NOCASE
-               AND response_time IS NOT NULL`,
+              FROM service_status
+              WHERE server_id = ?
+                AND timestamp >= ${windowExpr}
+                AND status = 'UP' COLLATE NOCASE
+                AND response_time IS NOT NULL`,
             [id, days],
             (err2, avgRow) => {
               if (err2) return res.status(500).json({ error: err2.message });
@@ -114,16 +114,16 @@ router.get('/servers/:id/summary', (req, res) => {
               // 3) sparkline: time/value pairs
               db.all(
                 `SELECT
-                   strftime('%Y-%m-%dT%H:%M:%fZ', timestamp) AS t,
-                   CASE
-                     WHEN status = 'UP' COLLATE NOCASE AND response_time IS NOT NULL THEN response_time
-                     ELSE 0
-                   END AS ms
-                 FROM service_status
-                 WHERE server_id = ?
-                   AND timestamp >= ${windowExpr}
-                 ORDER BY timestamp ASC
-                 LIMIT 1000`,
+                    strftime('%Y-%m-%dT%H:%M:%fZ', timestamp) AS t,
+                    CASE
+                      WHEN status = 'UP' COLLATE NOCASE AND response_time IS NOT NULL THEN response_time
+                      ELSE 0
+                    END AS ms
+                  FROM service_status
+                  WHERE server_id = ?
+                    AND timestamp >= ${windowExpr}
+                  ORDER BY timestamp ASC
+                  LIMIT 1000`,
                 [id, days],
                 (err3, sparkRows) => {
                   if (err3) return res.status(500).json({ error: err3.message });
@@ -150,7 +150,6 @@ router.get('/servers/:id/summary', (req, res) => {
     }
   );
 });
-
 
 // Endpoint to update a service (PATCH /api/services/:id)
 router.patch('/servers/:id', (req, res) => {
