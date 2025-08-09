@@ -20,13 +20,13 @@ async function runHealthChecks(services, db) {
 
         db.run(
         `INSERT INTO service_status (server_id, status, response_time) VALUES (?, ?, ?)`,
-        [service.id, status, responseTime]
+        [service.id, status.toUpperCase(), responseTime]
         );
 
         // Optionally update the servers table as well
         db.run(
         `UPDATE servers SET status = ?, response_time = ?, last_checked = CURRENT_TIMESTAMP WHERE id = ?`,
-        [status, responseTime, service.id]
+        [status.toUpperCase(), responseTime, service.id]
         );
 
         results.push({

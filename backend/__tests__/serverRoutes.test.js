@@ -12,6 +12,7 @@ let db;
 let runAsync;
 let closeAsync;
 let getAsync;
+let allAsync;
 let createdId;
 let insertedServerId;
 
@@ -19,6 +20,7 @@ beforeAll(async () => {
     db = getDb(); // Get the database connection
     runAsync = util.promisify(db.run.bind(db));
     getAsync = util.promisify(db.get.bind(db));
+    allAsync = util.promisify(db.all.bind(db)) 
 
     await runAsync(`PRAGMA foreign_keys = ON`);
     
@@ -44,12 +46,25 @@ beforeAll(async () => {
     await runAsync(`DELETE FROM service_status`);
     await runAsync(`DELETE FROM servers`);
 
+    // one server
+    const now = new Date();
+    const iso = (d) => d.toISOString();
     
     await runAsync(`INSERT INTO servers (name, url, created_at, status, response_time, last_checked) VALUES (?, ?, ?, ?, ?, ?) `, ['Test Server Name', 'http://test.com', new Date().toISOString(), 'UP', 100, new Date().toISOString()]);
-    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, [1, 'up', 100, new Date().toISOString()]);   
     
     const row = await getAsync('SELECT id FROM servers ORDER BY id DESC LIMIT 1');
     insertedServerId = row.id;
+    
+    
+    // three history points: two Up, one Down
+    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
+    [insertedServerId, 'UP', 100, iso(new Date(now.getTime() - 3 * 60 * 1000))]);  
+    
+    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
+    [insertedServerId, 'DOWN', null, iso(new Date(now.getTime() - 2 * 60 * 1000))]);   
+
+    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
+    [insertedServerId, 'UP', 90, iso(new Date(now.getTime() - 1 * 60 * 1000))]);   
     
     app = require('../app'); // Import the Express app after setting up the database
 });
@@ -97,6 +112,42 @@ describe('Server API Endpoints', () => {
             ])
         );
     });
+
+    it('GET /api/servers/:id/history should return history rows in descending time order with default fields', async () => {
+        const res = await request(app).get(`/api/servers/${insertedServerId}/history`);
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeGreaterThanOrEqual(3);
+
+        const first = res.body[0];
+        expect(first).toHaveProperty('time');
+        expect(first).toHaveProperty('status');
+        expect(first).toHaveProperty('response_time');
+
+        const times = res.body.map(r => r.time);
+        const sorted = [...times].sort().reverse();
+        expect(times).toEqual(sorted);
+
+    });
+    
+    it('filters by status=UP', async () => {
+        const res = await request(app)
+        .get(`/api/servers/${insertedServerId}/history?status=UP&limit=50`)
+        .expect(200);
+
+        expect(res.body.length).toBeGreaterThan(0);
+        res.body.forEach(row => expect(row.status).toBe('UP'));
+    });
+
+    it('respects limit parameter', async () => {
+        const res = await request(app)
+        .get(`/api/servers/${insertedServerId}/history?limit=2`)
+        .expect(200);
+
+        expect(res.body.length).toBeLessThanOrEqual(2);
+    });
+
 
     it('PATCH /api/servers/:id should update server', async () => {
         const res = await request(app)

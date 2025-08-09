@@ -38,6 +38,42 @@ router.post('/servers', (req, res) => {
     });
 });
 
+// Endpoit to get history for specific server (GET /api/services/:id/history)
+router.get('/servers/:id/history', (req, res) => {
+    const id = Number(req.params.id);
+    const limit = Math.min(200, Number(req.query.limit) || 50);
+    const status = req.query.status && req.query.status != 'All' ? String(req.query.status) : null;
+
+    db.get('SELECT id FROM servers WHERE id = ?', [id], (existErr, server) => {
+        if (existErr) return res.status(500).json({error: existErr.message});
+        if(!server) return res.status(404).json({error: 'Server not found'});
+        
+        const where = ['server_id = ?'];
+        const params = [id];
+        if(status) {
+            where.push('status = ?');
+            params.push(status);
+        }
+
+        const sql = `
+            SELECT
+                strftime('%Y-%m-%dT%H:%M:%fZ', timestamp) AS time,
+                status,
+                response_time
+            FROM service_status
+            WHERE ${where.join(' AND ')}
+            ORDER BY timestamp DESC
+            LIMIT ?`;
+
+        params.push(limit);
+
+        db.all(sql, params, (err, rows) => {
+            if(err) return res.status(500).json({error: err.message});
+            res.json(rows);
+        });
+    });
+});
+
 // Endpoint to update a service (PATCH /api/services/:id)
 router.patch('/servers/:id', (req, res) => {
   const id = req.params.id;
