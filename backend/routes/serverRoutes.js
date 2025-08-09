@@ -72,7 +72,7 @@ router.delete('/servers/:id', (req, res) => {
 
 // Endpoint to get all service statuses (GET /api/status)
 router.get('/status', (req, res) => {  
-    db.all('SELECT * FROM service_status ORDER BY timestamp DESC LIMIT 10', (err, rows) => {
+    db.all('SELECT * FROM service_status ORDER BY timestamp DESC', (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }

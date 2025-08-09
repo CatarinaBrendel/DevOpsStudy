@@ -52,7 +52,7 @@ export default function Sparkline({
   const color =
     status.toLowerCase() === "down"
       ? "#ef4444"
-      : status.toLowerCase() === "unknown"
+      : status.toLowerCase() === "warn"
       ? "#f59e0b"
       : "#22c55e";
 

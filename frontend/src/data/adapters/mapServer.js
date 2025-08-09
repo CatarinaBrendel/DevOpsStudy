@@ -2,7 +2,7 @@
 export function mapServersFromDB({ servers = [], serviceStatus = [] }) {
 
   function normalizeStatus(status) {
-    if(!status) return 'unknown';
+    if(!status) return 'warn';
     
     const lower = status.toLowerCase();
     if (lower.includes('down')) return 'down';
@@ -13,16 +13,16 @@ export function mapServersFromDB({ servers = [], serviceStatus = [] }) {
   // group service_status by server_id
   const byServer = new Map();
   for (const row of serviceStatus) {
-    const serverId = row.serverId;
+    const serverId = row.server_id;
     console.log(serverId);
-    if(!serverId.has(serverId)) byServer.set(serverId, []);
+    if(!byServer.has(serverId)) byServer.set(serverId, []);
     byServer.get(serverId).push(row);
   }
   for (const server of byServer.values()) {
-      server.sort((a, b) => new Date(a.checked_at) - new Date(b.checked_at));
+      server.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   }
-  // ensure newest last for sparkine (left to right)
   
+  // ensure newest last for sparkine (left to right)
   return servers.map(server => {
       const serverId = server.id;
       const historyRows = byServer.get(serverId) || [];

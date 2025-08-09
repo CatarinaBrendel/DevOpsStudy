@@ -57,24 +57,33 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) 
                     <StatusChip value="all" active={statusFilter === 'all'} onClick={setStatusFilter}>All</StatusChip>
                     <StatusChip value="up" active={statusFilter === 'up'} onClick={setStatusFilter}>UP</StatusChip>
                     <StatusChip value="down" active={statusFilter === 'down'} onClick={setStatusFilter}>DOWN</StatusChip>
-                    <StatusChip value="unknown" active={statusFilter === 'unknown'} onClick={setStatusFilter}>UNKNOWN</StatusChip>
+                    <StatusChip value="warn" active={statusFilter === 'warn'} onClick={setStatusFilter}>WARN</StatusChip>
                 </div>
                 <nav className="sidebar__list" aria-label="Servers">
                     {filtered.map(server => (
                         <button type="button" className="row" key={server.id}>
-                            <StatusDot status={server.status} />
-                            <div className="row__main">
-                                <div className="row__name">{server.name}</div>
-                                <Sparkline points={server.history} status={server.status} />
+                            <div className="row__left">
+                                <StatusDot status={server.status} />
+                                <div className="row__text">
+                                    <div className="row__name">{server.name}</div>
+                                </div>
                             </div>
-                            <div className="row__meta">
-                                {server.status === 'down' ? '' : `${server.responseTime} ms`}
-                            </div>
+                                <div className="row__right">
+                                    <div className="row__spark">
+                                        <Sparkline points={server.history} status={server.status} />
+                                    </div>
+                                    <div className="row__meta">
+                                        {server.status === 'down' && <span className="badge badge--down">Down</span>}
+                                        {server.status === 'warn' && <span className="badge badge--warn">Warn</span>}
+                                        {server.status === 'up' && <span className="badge badge--up">Up</span>}
+                                        <span className="latency">{server.responseTime} ms</span>
+                                    </div>
+                                </div>
                         </button>
                     ))}
                 </nav>
                 <div className="sidebar__footer">
-                    <button className="add" onClick={() => setShowModal(true)}> + Add Server</button>
+                    <button type="button" className="btn tbn-light " onClick={() => setShowModal(true)}> + Add Server</button>
                     <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
                         <h3>Add New Server</h3>
                         <form onSubmit={handleClick}>
@@ -94,7 +103,7 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) 
                             />
                             <div className="modal-buttons">
                             <button type="submit" className="btn primary">Add</button>
-                            <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
+                            <button type="button" className= "btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                             </div>
                         </form>
                         </Modal>
