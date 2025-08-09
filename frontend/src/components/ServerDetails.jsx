@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import TrendChart from "./TrendChart";
 import { loadHistory } from "../data/loadHistory";
 import { loadSummary } from "../data/loadSummary";
 
@@ -55,11 +56,7 @@ export default function ServerDetails({ serverId }) {
       {/* Sparkline chart placeholder */}
       <div className="mt-4">
         <h4 className="border-bottom pb-2">Response Time Trend</h4>
-        <ul className="list-inline small text-muted">
-          {summary.sparkline.map((p, idx) => (
-            <li key={idx} className="list-inline-item">{p.t} — {p.ms}ms</li>
-          ))}
-        </ul>
+        <TrendChart points={summary.sparkline} height={180} />
       </div>
 
       <div className="mt-4">
