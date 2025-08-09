@@ -19,13 +19,11 @@ COMPOSE = docker compose $(foreach p,$(PROFILES),--profile $(p))
 
 # ---- Lifecycle ----
 up:
-	# $(COMPOSE) up -d $(SERVICES)
-	docker compose up
+	$(COMPOSE) up -d $(SERVICES)
 
 down:
 	# Safe down: keeps volumes
-	# $(COMPOSE) down --remove-orphans
-	docker compose down
+	$(COMPOSE) down --remove-orphans
 
 down-v:
 	# DANGER: also removes named volumes
@@ -47,6 +45,9 @@ rebuild:
 build:
 	$(COMPOSE) build $(SERVICES)
 	docker builder prune -f --filter until=$(CACHE_DAYS)d
+
+deploy:
+	docker compose down && docker compose build --no-cache && docker compose up
 
 # ---- Inspect / Logs ----
 ps:

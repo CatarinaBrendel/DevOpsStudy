@@ -87,3 +87,56 @@ th {
 .add{ width:100%; padding:10px; border-radius:12px; border:1px dashed var(--line); background:#fff; }
 .add:hover{ background:var(--bg); }
 
+/* Modal CSS */
+.dd-modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.dd-modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  display: block;           /* override any global defaults */
+  visibility: visible;      /* belt + suspenders */
+  opacity: 1;               /* in case a framework sets 0 by default */
+  outline: 1px solid #ddd;  /* temporary: makes it obvious it's visible */
+}
+
+.dd-modal h3 {
+  margin-top: 0;
+}
+
+.dd-modal input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-buttons .primary {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-buttons button {
+  cursor: pointer;
+}

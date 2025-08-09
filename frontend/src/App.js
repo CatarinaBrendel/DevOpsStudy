@@ -3,6 +3,7 @@ import './App.css';
 import ServerList from './components/ServerList';
 import AddServerForm from './components/AddServerForm';
 import Sidebar from './components/Sidebar';
+import { fetchSidebarItems } from './data/loadServers';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -16,9 +17,12 @@ function App() {
 
   const fetchServers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/servers`);
-      const data = await response.json();
-      setServers(data);
+      //const response = await fetch(`${API_BASE}/servers`);
+      //const data = await response.json();
+
+      const data = await fetchSidebarItems();
+      setServers(Array.isArray(data) ? data: []);
+      return data;
     } catch (error) {
       console.error('Error fetching servers:', error);
     }
@@ -98,8 +102,8 @@ function App() {
       <Sidebar 
         items={servers} 
         selectedId={null} 
-        onsSelect={() => {}} 
-        onAddServer={handleAddServer} 
+        onSelect={() => {}} 
+        onAddServer={handleAddServer}
       />
       <main style={{padding: 16}} className="main-content">
         {/* placeholder for center/right panels */}
