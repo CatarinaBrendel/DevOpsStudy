@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from './components/Sidebar';
 import { fetchSidebarItems } from './data/loadServers';
 import ServerDetails from './components/ServerDetails';
@@ -78,24 +79,7 @@ function App() {
     }
   };
 
-  const handleItemStatusCheck = async (id) => {
-    try {
-      const response = await fetch(`${API_BASE}/status/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }), 
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error checking service status: ${response.statusText}`);
-      } 
-
-      const data = await response.json();
-      fetchServers();
-    } catch (error) {
-      console.error('Error checking service status:', error);
-    }
-  };
+  
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', height: '100vh'   }}>

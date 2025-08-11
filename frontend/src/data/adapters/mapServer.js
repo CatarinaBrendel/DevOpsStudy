@@ -14,7 +14,6 @@ export function mapServersFromDB({ servers = [], serviceStatus = [] }) {
   const byServer = new Map();
   for (const row of serviceStatus) {
     const serverId = row.server_id;
-    console.log(serverId);
     if(!byServer.has(serverId)) byServer.set(serverId, []);
     byServer.get(serverId).push(row);
   }

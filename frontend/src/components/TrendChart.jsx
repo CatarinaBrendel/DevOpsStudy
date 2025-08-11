@@ -1,17 +1,15 @@
 import React, { useMemo, useRef } from 'react';
 import {
   Chart as ChartJS,
-  LineElement, PointElement, LinearScale, TimeSeriesScale,
+  LineElement, PointElement, LinearScale, TimeScale,
   Tooltip, Filler, CategoryScale
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { Line } from 'react-chartjs-2';
 
-ChartJS.register(LineElement, PointElement, LinearScale, TimeSeriesScale, CategoryScale, Tooltip, Filler);
+ChartJS.register(LineElement, PointElement, LinearScale, TimeScale, CategoryScale, Tooltip, Filler);
 
 export default function TrendChart({ points = [], height = 160 }) {
-  const canvasRef = useRef(null);
-
   const data = useMemo(() => {
     // convert [{t, ms}] to Chart.js format
     const labels = points.map(p => new Date(p.t));
@@ -29,7 +27,13 @@ export default function TrendChart({ points = [], height = 160 }) {
       tooltip: {
         displayColors: false,
         callbacks: {
-          title: ctx => ctx[0]?.label ? new Date(ctx[0].label).toLocaleString() : '',
+          title: (items) => {
+            const ts = items?.[0]?.parsed?.x;
+            return new Intl.DateTimeFormat(undefined, {
+              dateStyle: 'medium',
+              timeStyle: 'short'
+            }).format(ts);
+          },
           label: ctx => `${ctx.parsed.y} ms`,
         }
       }
@@ -41,37 +45,35 @@ export default function TrendChart({ points = [], height = 160 }) {
   }), []);
 
   const chartData = useMemo(() => {
-    // build gradient fill
-    let bg = 'rgba(220,53,69,0.15)';   // Bootstrap danger w/ alpha
     let border = 'rgba(220,53,69,1)';
-
-    // create vertical gradient if canvas ready
-    let gradient = bg;
-    const ctx = canvasRef.current?.getContext?.('2d');
-    if (ctx) {
-      const g = ctx.createLinearGradient(0, 0, 0, height);
-      g.addColorStop(0, 'rgba(220,53,69,0.25)');
-      g.addColorStop(1, 'rgba(220,53,69,0.0)');
-      gradient = g;
-    }
 
     return {
       labels: data.labels,
       datasets: [{
-        data: data.values,
+        data: points.map(p => ({x: new Date(p.t).getTime(), y: Number(p.ms ?? 0)})),
+        backgroundColor: (ctx) => {
+          const {chart} = ctx;
+          const {ctx: c, chartArea} = chart || {};
+          if (!chartArea) {
+            return ''
+          }
+          const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          g.addColorStop(0, 'rgba(220,53,69,0.25)');
+          g.addColorStop(1, 'rgba(220,53,69,0.0)');
+          return g;
+        },
         borderColor: border,
-        backgroundColor: gradient,
         fill: true,
         borderWidth: 2,
         tension: 0.35,     // smooth curve
         spanGaps: true
       }]
     };
-  }, [data, height]);
+  }, [points]);
 
   return (
     <div style={{ height }}>
-      <Line ref={canvasRef} data={chartData} options={options} />
+      <Line data={chartData} options={options} />
     </div>
   );
 }

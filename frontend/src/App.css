@@ -98,6 +98,15 @@ th {
 .row:first-child{ border-top:1px solid var(--line); }
 .row:hover{ background:#fafafa; }
 
+.row--selected {
+  background-color: #f8f9fa; /* Bootstrap light grey */
+}
+
+/* Optional: subtle accent border to make it pop */
+.row--selected {
+  border-left: 4px solid #0d6efd; /* Bootstrap blue */
+}
+
 /* Left side: dot + name + faint sparkline under it */
 .row__left{ display:flex; align-items:center; gap:10px; min-width:0; }
 .row__text{ display:flex; flex-direction:row; align-items: baseline; gap:6px; min-width:0; }

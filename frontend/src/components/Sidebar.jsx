@@ -63,7 +63,7 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) 
                     {filtered.map(server => (
                         <button 
                             type="button" 
-                            className="row" 
+                            className={`row ${server.id === selectedId ? 'row--selected' : ''}`} 
                             key={server.id}
                             onClick={() => onSelect(server.id)}>
                             <div className="row__left">

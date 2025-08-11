@@ -1,37 +1,55 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useCallback} from "react";
 import TrendChart from "./TrendChart";
 import { loadHistory } from "../data/loadHistory";
 import { loadSummary } from "../data/loadSummary";
+import RefreshItemButton from "./RefreshItemButton";
 
 export default function ServerDetails({ serverId }) {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const summaryData = await loadSummary(serverId);
-        const historyData = await loadHistory(serverId);
+  const load = useCallback(async () => {
+    if(!serverId) return;
+    setLoading(true);
+    try {
+      const summaryData = await loadSummary(serverId);
+      const historyData = await loadHistory(serverId);
 
-        setSummary(summaryData);
-        setHistory(historyData);
-      } catch (err) {
-        console.error('Error loading server details', err);
-      } finally {
-        setLoading(false);
-      }
+      setSummary(summaryData);
+      setHistory(historyData);
+    } catch (err) {
+      console.error('Error loading server details', err);
+    } finally {
+      setLoading(false);
     }
-    fetchData();
   }, [serverId]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!summary) return <div>No data available.</div>;
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (!summary) {
+    return (
+      <div className="p-3">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+           <h3 className="mb-0">Server Details</h3>
+           <div className="ms-auto">
+              <RefreshItemButton serverId={serverId} onRefresh={load} />
+           </div>
+        </div>
+        {loading ? <div>Loading...</div> : <div className="text-muted">No data!</div>}
+      </div>)
+  }
 
   return (
     <div className="p-3">
-      <h3 className="mb-1">Server Details</h3>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h3 className="mb-1">Server Details</h3>
+        <div className="ms-auto">
+            <RefreshItemButton serverId={serverId} onRefresh={load} />
+        </div>
+      </div>
       <h2 className="mb-1">{summary.server.name}</h2>
       <p className="text-muted mb-2">URL: {summary.server.url}</p>
       <p><strong>Uptime (last {summary.days} days):</strong> {summary.uptimePercent ?? '-'}%</p>
@@ -56,7 +74,9 @@ export default function ServerDetails({ serverId }) {
       {/* Sparkline chart placeholder */}
       <div className="mt-4">
         <h4 className="border-bottom pb-2">Response Time Trend</h4>
-        <TrendChart points={summary.sparkline} height={180} />
+        <TrendChart 
+          key={`${serverId} : ${summary?.lastChecked ?? ''}`}
+          points={summary.sparkline} height={180} />
       </div>
 
       <div className="mt-4">
