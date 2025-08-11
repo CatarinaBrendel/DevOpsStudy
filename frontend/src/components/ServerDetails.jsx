@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from "react";
+import React, {useEffect, useState, useCallback, useMemo} from "react";
 import TrendChart from "./TrendChart";
 import { loadHistory } from "../data/loadHistory";
 import { loadSummary } from "../data/loadSummary";
@@ -13,14 +13,18 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortOrder, setSortOrder] = useState('newest');
 
+  
+  
   const load = useCallback(async () => {
     if(!serverId) return;
     setLoading(true);
     try {
       const summaryData = await loadSummary(serverId);
       const historyData = await loadHistory(serverId);
-
+      
       setSummary(summaryData);
       setHistory(historyData);
     } catch (err) {
@@ -29,13 +33,38 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
       setLoading(false);
     }
   }, [serverId]);
-
+  
   const handleSave = async({name, url}) => {
     await onUpdateServer?.(serverId, {serverName: name, serverUrl: url});
     setShowEdit(false);
     load();
   };
+  
+  const filteredHistory = useMemo(() => {
+    let data = Array.isArray(history) ? [...history] : [];
 
+    if (statusFilter !== 'ALL') {
+      data = data.filter(h => h.status === statusFilter);
+    }
+
+    data.sort((a, b) => {
+      const ta = getRowTs(a);
+      const tb = getRowTs(b);
+
+      const aValid = Number.isFinite(ta);
+      const bValid = Number.isFinite(tb);
+
+      // push invalid timestamps to the bottom consistently
+      if (!aValid && !bValid) return 0;
+      if (!aValid) return 1;
+      if (!bValid) return -1;
+
+      return sortOrder === 'newest' ? tb - ta : ta - tb;
+    });
+
+    return data;
+  }, [history, statusFilter, sortOrder]);
+  
   useEffect(() => {
     load();
   }, [load]);
@@ -96,27 +125,70 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
       </div>
 
       <div className="mt-4">
-        <h4 className="border-bottomn pb-2">History</h4>
-        <div className="table-responsive" style={{maxHeight: '400px'}}>
+        <h4 className="border-bottom pb-2">History</h4>
+        <div className="table-responsive mb-2" style={{maxHeight: '400px', overflow: 'auto'}}>
           <table className="table table-striped table-hover table-sm align-middle">
             <thead className="table-light">
               <tr>
-                <th>Time</th>
-                <th>Status</th>
+                <th>
+                  Time
+                  <div>
+                    <select 
+                      className="form-select form-select-sm mt-1"
+                      value={sortOrder}
+                      onChange={e => setSortOrder(e.target.value)}
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                    </select>
+                  </div>
+                </th>
+                <th>
+                  Status
+                  <div >
+                    <select
+                      className="form-select form-select-sm mt-1"
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                    >
+                      <option value="ALL">All</option>
+                      <option value="UP">Up</option>
+                      <option value="DOWN">Down</option>
+                      <option value="WARN">Warn</option>
+                    </select>
+                  </div>
+                </th>
                 <th>Response Time</th>
               </tr>
             </thead>
             <tbody>
-              {history.map((row, idx) => (
-                <tr key={idx}>
-                  <td>{row.time}</td>
-                  <td>
-                    <span className={`badge ${row.status === 'UP' ? 'bg-success' : row.status == 'DOWN' ? 'bg-danger' : 'bg-warning text-dark' }`}>{row.status}</span>
-                  </td>
-                  <td>{row.response_time ?? '-'}</td>
-                </tr>
-              ))}
+              {filteredHistory.map((row, idx) => {
+                // be flexible about backend keys
+                const ts = row.ts ?? row.timestamp ?? row.time ?? row.createdAt ?? row.checked_at;
+                const timeDisplay = formatDateTime(ts);
+
+                return (
+                  <tr key={idx}>
+                    <td>{timeDisplay}</td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          row.status === 'UP'
+                            ? 'bg-success'
+                            : row.status === 'DOWN'
+                            ? 'bg-danger'
+                            : 'bg-warning text-dark'
+                        }`}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                    <td>{row.response_time ?? row.responseMs ?? row.latencyMs ?? '—'}</td>
+                  </tr>
+                );
+              })}
             </tbody>
+
           </table>
         </div>
       </div>
@@ -138,3 +210,38 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
     </div>
   );
 }
+
+function toMillis(ts) {
+  if (ts == null) return NaN;
+  if (typeof ts === 'number') {
+    // epoch seconds vs ms
+    return ts < 1e12 ? ts * 1000 : ts;
+  }
+  const t = Date.parse(ts);
+  return Number.isFinite(t) ? t : NaN;
+}
+
+function formatClock(tsLike) {
+  const t = toMillis(tsLike);
+  if (!Number.isFinite(t)) return '—';
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(t);
+}
+
+function formatDateTime(tsLike) {
+  const t = toMillis(tsLike);
+  if (!Number.isFinite(t)) return '—';
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short', // "Aug" style
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(t);
+}
+
+function getRowTs(row) {
+  const ts = row.ts ?? row.timestamp ?? row.time ?? row.createdAt ?? row.checked_at;
+  return toMillis(ts);
+}
+
+

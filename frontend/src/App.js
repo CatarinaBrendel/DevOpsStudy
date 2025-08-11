@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
+import {toast, ToastContainer} from 'react-toastify';
 import './App.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from './components/Sidebar';
 import { fetchSidebarItems } from './data/loadServers';
 import ServerDetails from './components/ServerDetails';
+import EmptyServerState from './components/EmptyServerState';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -36,9 +38,21 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ serverName, serverUrl }),
       });
-      fetchServers()
+      
+      await fetchServers();
+      setSelectedServerId(null);
+
+      toast.success(`Server "${serverName}" added successfully`, {
+        position: 'top-right',
+        autoClose: 3000
+      });
+
     } catch (error) {
       console.error('Error adding server:', error);
+      toast.error('Failed to add server. Please try again.', {
+        position: 'top-right',
+        autoClose: 3000
+      })
     }
   };
 
@@ -49,9 +63,21 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData),
       });
-      fetchServers();
+      
+      await fetchServers();
+      setSelectedServerId(null);
+      
+      toast.success(`Server "${updatedData.serverName}" updated successfully`, {
+        position: 'top-right',
+        autoClose: 3000
+      });
+
     } catch (err) {
       console.error('Error updating server:', err);
+      toast.error(`Error updating "${updatedData.serverName}" server. Please try again.`, {
+        position: 'top-right',
+        autoClose: 3000
+      });
     }
   };
   
@@ -60,9 +86,20 @@ function App() {
       await fetch(`${API_BASE}/servers/${id}`, {
         method: 'DELETE',
       });
+      
       fetchServers();
+
+      toast.success(`Server deleted successfully`, {
+        position: 'top-right',
+        autoClose: 3000
+      });
+
     } catch (err) {
       console.error('Error deleting server:', err);
+      toast.error(`Error deleting the server. Please try again.`, {
+        position: 'top-right',
+        autoClose: 3000
+      });
     }
   };
 
@@ -78,8 +115,6 @@ function App() {
       console.error('Error checking server:', err);
     }
   };
-
-  
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', height: '100vh'   }}>
@@ -98,8 +133,16 @@ function App() {
               await handleDeleteServer(id);
               setSelectedServerId((prev) => (prev === id ? null : prev));
           }}
-          />) : (<div>Please selct a server</div>)}
+          />) : (
+            <>
+              <EmptyServerState
+              hasServers={servers.length > 0}
+              onAddServer={handleAddServer}
+              onSelectServer={() => toast('Select a server from the left')} />
+            </>
+          )}
       </main>
+      <ToastContainer />
     </div>
   );
 }
