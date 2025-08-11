@@ -6,8 +6,9 @@ import RefreshItemButton from "./RefreshItemButton";
 import EditServerForm from './EditServerForm';
 import EditItemButton from './EditItemButton';
 import Modal from "./Modal";
+import DeleteItemButton from "./DeleteItemButton";
 
-export default function ServerDetails({ serverId, onUpdateServer }) {
+export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer }) {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,14 @@ export default function ServerDetails({ serverId, onUpdateServer }) {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <div className="ms-auto">
+          <DeleteItemButton
+              itemName={summary.server.name}
+              onConfirm={() => onDeleteServer?.(serverId)}
+            />
         </div>
       </div>
       <Modal isOpen={showEdit} onClose={() => setShowEdit(false)}>

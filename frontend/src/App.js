@@ -94,6 +94,10 @@ function App() {
           <ServerDetails 
             serverId={selectedServerId}
             onUpdateServer={handleUpdateServer}
+            onDeleteServer={async (id) => {
+              await handleDeleteServer(id);
+              setSelectedServerId((prev) => (prev === id ? null : prev));
+          }}
           />) : (<div>Please selct a server</div>)}
       </main>
     </div>
