@@ -90,7 +90,11 @@ function App() {
         onAddServer={handleAddServer}
       />
       <main style={{padding: 16}} className="main-content">
-        {selectedServerId ? (<ServerDetails serverId={selectedServerId}/>) : (<div>Please selct a server</div>)}
+        {selectedServerId ? (
+          <ServerDetails 
+            serverId={selectedServerId}
+            onUpdateServer={handleUpdateServer}
+          />) : (<div>Please selct a server</div>)}
       </main>
     </div>
   );

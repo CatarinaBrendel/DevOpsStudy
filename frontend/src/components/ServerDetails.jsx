@@ -3,11 +3,15 @@ import TrendChart from "./TrendChart";
 import { loadHistory } from "../data/loadHistory";
 import { loadSummary } from "../data/loadSummary";
 import RefreshItemButton from "./RefreshItemButton";
+import EditServerForm from './EditServerForm';
+import EditItemButton from './EditItemButton';
+import Modal from "./Modal";
 
-export default function ServerDetails({ serverId }) {
+export default function ServerDetails({ serverId, onUpdateServer }) {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
 
   const load = useCallback(async () => {
     if(!serverId) return;
@@ -24,6 +28,12 @@ export default function ServerDetails({ serverId }) {
       setLoading(false);
     }
   }, [serverId]);
+
+  const handleSave = async({name, url}) => {
+    await onUpdateServer?.(serverId, {serverName: name, serverUrl: url});
+    setShowEdit(false);
+    load();
+  };
 
   useEffect(() => {
     load();
@@ -50,7 +60,12 @@ export default function ServerDetails({ serverId }) {
             <RefreshItemButton serverId={serverId} onRefresh={load} />
         </div>
       </div>
-      <h2 className="mb-1">{summary.server.name}</h2>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h2 className="mb-1">{summary.server.name}</h2>
+        <div className="ms-auto">
+          <EditItemButton onClick={() => setShowEdit(true)}/>
+        </div>
+      </div>
       <p className="text-muted mb-2">URL: {summary.server.url}</p>
       <p><strong>Uptime (last {summary.days} days):</strong> {summary.uptimePercent ?? '-'}%</p>
       <div className="progress mt-1" style={{ height: "20px" }}>
@@ -104,6 +119,13 @@ export default function ServerDetails({ serverId }) {
           </table>
         </div>
       </div>
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)}>
+        <EditServerForm 
+          initial={{ name: summary.server.name, url: summary.server.url }}
+          onCancel={() => setShowEdit(false)}
+          onSave={handleSave}
+        />
+      </Modal>
     </div>
   );
 }
