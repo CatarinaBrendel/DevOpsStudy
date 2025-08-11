@@ -126,7 +126,7 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
 
       <div className="mt-4">
         <h4 className="border-bottom pb-2">History</h4>
-        <div className="table-responsive mb-2" style={{maxHeight: '400px', overflow: 'auto'}}>
+        <div className="table-responsive mb-2" style={{ maxHeight: 400, overflow: 'auto' }}>
           <table className="table table-striped table-hover table-sm align-middle">
             <thead className="table-light">
               <tr>

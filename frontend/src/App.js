@@ -117,14 +117,16 @@ function App() {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', height: '100vh'   }}>
-      <Sidebar 
-        items={servers} 
-        selectedId={selectedServerId} 
-        onSelect={setSelectedServerId} 
-        onAddServer={handleAddServer}
-      />
-      <main style={{padding: 16}} className="main-content">
+    <div className='app-shell'>
+      <div className='app-sidebar'>
+        <Sidebar 
+          items={servers} 
+          selectedId={selectedServerId} 
+          onSelect={setSelectedServerId} 
+          onAddServer={handleAddServer}
+          />
+      </div>
+      <main className="app-main">
         {selectedServerId ? (
           <ServerDetails 
             serverId={selectedServerId}
