@@ -8,7 +8,7 @@ import Modal from "./Modal";
 import DeleteItemButton from "./DeleteItemButton";
 import ExportButtons from "./ExportButtons";
 
-export default function ServerDetails({ serverId, onTriggerCheck, isTriggering, onUpdateServer, onDeleteServer }) {
+export default function ServerDetails({ serverId, lastChecked, onTriggerCheck, isTriggering, onUpdateServer, onDeleteServer }) {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -137,8 +137,9 @@ export default function ServerDetails({ serverId, onTriggerCheck, isTriggering, 
   }, [summary, history, serverId]);
 
   useEffect(() => {
+    if(!serverId) return;
     load();
-  }, [load]);
+  }, [load, lastChecked]);
 
   if (!summary) {
     return (

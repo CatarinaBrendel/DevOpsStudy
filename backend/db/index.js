@@ -2,7 +2,6 @@
 const sqlite3 = require('sqlite3').verbose();
 let db;
 
-
 function getDb() {
     if (!db) {
         const dbPath = process.env.DB_PATH || '/data/status.db';
@@ -14,6 +13,7 @@ function getDb() {
             }
         });
     }
+    
     return db;
 }
 

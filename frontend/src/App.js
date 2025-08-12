@@ -7,13 +7,12 @@ import { onFetchSidebarItems, triggerCheck, onAddServer, onUpdateServer, onDelet
 import ServerDetails from './components/ServerDetails';
 import EmptyServerState from './components/EmptyServerState';
 
-const API_BASE = 'http://localhost:3001/api';
-
 function App() {
   const [servers, setServers] = useState([]);
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [isRefreshAll, setIsRefreshingAll] = useState(false);
   const [checkingId, setCheckingId] = useState(null);
+  const selected = servers.find(s => s.id == selectedServerId);
   
   //Load servers from API
   useEffect(() => {
@@ -26,7 +25,12 @@ function App() {
         setServers(Array.isArray(data) ? data: []);
         return data;
       } catch (error) {
-        console.error('Error fetching servers:', error);
+        console.error('Error checking server:', err);
+        const msg = err.response?.data?.message || err.message || 'Request failed';
+        toast.error(msg, {
+          position: 'top-right',
+          autoClose: 3000
+        });
       }
   };  
 
@@ -45,11 +49,12 @@ function App() {
       })
 
     } catch (err) {
-      console.error("Error triggering health check:", err);
-      toast.error(`Server status wasn't able to be refreshed.`, {
+      console.error('Error checking server:', err);
+      const msg = err.response?.data?.message || err.message || 'Request failed';
+      toast.error(msg, {
         position: 'top-right',
         autoClose: 3000
-      })
+      });
     } finally {
       setCheckingId(null);
     }
@@ -57,7 +62,6 @@ function App() {
 
   const handleAddServer = async ({serverName, serverUrl}) => {
     try {
-      console.log(`servername: ${serverName}, serverurl: ${serverUrl}`);
       await onAddServer(serverName, serverUrl);
       
       await fetchServers();
@@ -69,11 +73,12 @@ function App() {
       });
 
     } catch (error) {
-      console.error('Error adding server:', error);
-      toast.error('Failed to add server. Please try again.', {
+      console.error('Error checking server:', err);
+      const msg = err.response?.data?.message || err.message || 'Request failed';
+      toast.error(msg, {
         position: 'top-right',
         autoClose: 3000
-      })
+      });
     }
   };
 
@@ -89,8 +94,9 @@ function App() {
       });
 
     } catch (err) {
-      console.error('Error updating server:', err);
-      toast.error(`Error updating "${updatedData.serverName}" server. Please try again.`, {
+      console.error('Error checking server:', err);
+      const msg = err.response?.data?.message || err.message || 'Request failed';
+      toast.error(msg, {
         position: 'top-right',
         autoClose: 3000
       });
@@ -108,8 +114,9 @@ function App() {
       });
 
     } catch (err) {
-      console.error('Error deleting server:', err);
-      toast.error(`Error deleting the server. Please try again.`, {
+      console.error('Error checking server:', err);
+      const msg = err.response?.data?.message || err.message || 'Request failed';
+      toast.error(msg, {
         position: 'top-right',
         autoClose: 3000
       });
@@ -126,13 +133,14 @@ function App() {
 
       toast.success(`Servers have been refreshed`, {
         position: 'top-right',
-        autoClose: 300
+        autoClose: 3000
       });
     } catch (err) {
       console.error('Error checking server:', err);
-      toast.error(`Servers failed to be refreshed. Please try again.`, {
+      const msg = err.response?.data?.message || err.message || 'Request failed';
+      toast.error(msg, {
         position: 'top-right',
-        autoClose: 300
+        autoClose: 3000
       });
     } finally {
       setIsRefreshingAll(false);
@@ -155,6 +163,7 @@ function App() {
         {selectedServerId ? (
           <ServerDetails 
             serverId={selectedServerId}
+            lastChecked={selected?.lastChecked}
             onUpdateServer={handleUpdateServer}
             onTriggerCheck={handleTriggerCheck}
             isTriggering={checkingId === selectedServerId}

@@ -16,7 +16,6 @@ const StatusDot = ({ status }) => (
 );
 
 export default function Sidebar({ items=[], selectedId, onSelect, onAddServer, onRefreshAll, refreshing=false}) {
-    //const [servers, setServers] = useState(items);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');   
     const [showModal, setShowModal] = useState(false);

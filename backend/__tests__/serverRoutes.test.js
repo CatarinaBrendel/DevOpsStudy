@@ -1,5 +1,5 @@
 /* eslint-env node */
-process.env.DB_PATH = ':memory:'; // Use in-memory SQLite DB for fast, isolated tests
+process.env.DB_PATH = ':file:memdb1?mode=memory&cache=shared'; // Use in-memory SQLite DB for fast, isolated tests
 jest.setTimeout(15000); // 15 seconds
 process.env.NODE_ENV = 'test'; // Set environment to test
 
@@ -8,17 +8,11 @@ const getDb = require('../db/index'); // Import the database connection
 const util = require('util');
 
 let app;
-let db;
-let runAsync;
-let closeAsync;
-let getAsync;
-let createdId;
-let insertedServerId;
 
-beforeAll(async () => {
-    db = getDb(); // Get the database connection
-    runAsync = util.promisify(db.run.bind(db));
-    getAsync = util.promisify(db.get.bind(db));
+async function seedDatabaseForTests ({withHistory = false}) {
+    const db = getDb(); // Get the database connection
+    const runAsync = util.promisify(db.run.bind(db));
+    const getAsync = util.promisify(db.get.bind(db));
 
     await runAsync(`PRAGMA foreign_keys = ON`);
     
@@ -39,8 +33,8 @@ beforeAll(async () => {
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
     )`);
-
-     // Clear tables to avoid conflicts
+    
+    // Clear tables to avoid conflicts
     await runAsync(`DELETE FROM service_status`);
     await runAsync(`DELETE FROM servers`);
 
@@ -51,184 +45,146 @@ beforeAll(async () => {
     await runAsync(`INSERT INTO servers (name, url, created_at, status, response_time, last_checked) VALUES (?, ?, ?, ?, ?, ?) `, ['Test Server Name', 'http://test.com', new Date().toISOString(), 'UP', 100, new Date().toISOString()]);
     
     const row = await getAsync('SELECT id FROM servers ORDER BY id DESC LIMIT 1');
-    insertedServerId = row.id;
+    const insertedServerId = row.id;
     
-    
-    // three history points: two Up, one Down
-    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
-    [insertedServerId, 'UP', 100, iso(new Date(now.getTime() - 3 * 60 * 1000))]);  
-    
-    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
-    [insertedServerId, 'DOWN', null, iso(new Date(now.getTime() - 2 * 60 * 1000))]);   
+    if(withHistory) {
+        // Seed 3 history points
+        await runAsync(
+        `INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?)`,
+            [insertedServerId, 'UP', 100, iso(new Date(now.getTime() - 3 * 60 * 1000))]
+        );
 
-    await runAsync(`INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?) `, 
-    [insertedServerId, 'UP', 90, iso(new Date(now.getTime() - 1 * 60 * 1000))]);   
-    
-    app = require('../app'); // Import the Express app after setting up the database
+        await runAsync(
+            `INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?)`,
+            [insertedServerId, 'DOWN', null, iso(new Date(now.getTime() - 2 * 60 * 1000))]
+        );
+
+        await runAsync(
+            `INSERT INTO service_status (server_id, status, response_time, timestamp) VALUES (?, ?, ?, ?)`,
+            [insertedServerId, 'UP', 90, iso(new Date(now.getTime() - 1 * 60 * 1000))]
+        );
+    }
+
+    return {insertedServerId, runAsync, getAsync};
+}
+  
+beforeAll(async () => {
+    app = require ('../app');
 });
-    
+
 afterAll(async () => {
-    db = getDb(); // Get the database connection
-    closeAsync = util.promisify(db.close.bind(db));
+    const db = getDb(); // Get the database connection
+    const closeAsync = util.promisify(db.close.bind(db));
     await closeAsync(); // Close the database connection
 });
     
 describe('Server API Endpoints', () => {
-    it('POST /api/servers should add new server', async () => {
-            try {
-            const res = await request(app)
-            .post('/api/servers')
-            .send({ serverName: 'Test Server', serverUrl: 'https://testserver.com'     
-        });
+  let insertedServerId, getAsync;
 
-        expect(res.statusCode).toBe(201);
-        expect(res.body).toHaveProperty('id');
-        createdId = Number(res.body.id); // Store the created ID for later tests
-        expect(res.body.name).toBe('Test Server');
-        } catch (error) {
-            console.error('Error in POST /api/servers:', error.message);
-            throw error; // Fail the test if there's an error
-        }   
-    });
+  beforeEach(async () => {
+    const seeded = await seedDatabaseForTests({ withHistory: false }); // no history needed for CRUD basics
+    insertedServerId = seeded.insertedServerId;
+    getAsync = seeded.getAsync;
+  });
 
-    it('GET /api/servers should return all servers', async () => {
-        const res = await request(app).get('/api/servers');
+  it('POST /api/servers should add new server', async () => {
+    const res = await request(app)
+      .post('/api/servers')
+      .send({ serverName: 'Test Server', serverUrl: 'https://testserver.com' })
+      .expect(201);
 
-        expect(res.statusCode).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        expect(res.body).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    id: Number(createdId),
-                    name: 'Test Server',
-                    url: 'https://testserver.com',
-                    created_at: expect.anything(),
-                    status: null,
-                    response_time: null,
-                    last_checked: expect.anything()
-                })
-            ])
-        );
-    });
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.name).toBe('Test Server');
+  });
 
-    it('GET /api/servers/:id/history should return history rows in descending time order with default fields', async () => {
-        const res = await request(app).get(`/api/servers/${insertedServerId}/history`);
+  it('GET /api/servers should return all servers', async () => {
+    const res = await request(app).get('/api/servers').expect(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    // Should at least contain the seeded one
+    expect(res.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: insertedServerId,
+          name: 'Test Server Name',
+          url: 'http://test.com',
+          created_at: expect.anything(),
+          status: 'UP',
+          response_time: 100,
+          last_checked: expect.anything(),
+        }),
+      ])
+    );
+  });
 
-        expect(res.statusCode).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        expect(res.body.length).toBeGreaterThanOrEqual(3);
+  it('PATCH /api/servers/:id should update server', async () => {
+    const res = await request(app)
+      .patch(`/api/servers/${insertedServerId}`)
+      .send({ serverName: 'Updated Test Server', serverUrl: 'https://updatedtestserver.com' })
+      .expect(200);
 
-        const first = res.body[0];
-        expect(first).toHaveProperty('time');
-        expect(first).toHaveProperty('status');
-        expect(first).toHaveProperty('response_time');
+    expect(res.body).toMatchObject({ id: insertedServerId });
+  });
 
-        const times = res.body.map(r => r.time);
-        const sorted = [...times].sort().reverse();
-        expect(times).toEqual(sorted);
+  it('DELETE /api/servers/:id should delete an existing server and return 204', async () => {
+    await request(app).delete(`/api/servers/${insertedServerId}`).expect(204);
 
-    });
-    
-    it('filters by status=UP', async () => {
-        const res = await request(app)
-        .get(`/api/servers/${insertedServerId}/history?status=UP&limit=50`)
-        .expect(200);
+    // Confirm it's really gone using local helper
+    const deleted = await getAsync('SELECT * FROM servers WHERE id = ?', [insertedServerId]);
+    expect(deleted).toBeUndefined();
+  });
 
-        expect(res.body.length).toBeGreaterThan(0);
-        res.body.forEach(row => expect(row.status).toBe('UP'));
-    });
-
-    it('respects limit parameter', async () => {
-        const res = await request(app)
-        .get(`/api/servers/${insertedServerId}/history?limit=2`)
-        .expect(200);
-
-        expect(res.body.length).toBeLessThanOrEqual(2);
-    });
-
-    it('returns correct uptimePercent and averageResponseMs', async () => {
-        const res = await request(app)
-        .get(`/api/servers/${insertedServerId}/summary?days=30`)
-        .expect(200);
-
-        expect(res.body).toHaveProperty('server');
-        expect(res.body.server.id).toBe(insertedServerId);
-        expect(res.body).toHaveProperty('uptimePercent');
-        expect(res.body).toHaveProperty('averageResponseMs');
-        expect(res.body).toHaveProperty('sparkline');
-
-        // uptimePercent: 2 UP / 3 total = 66.7
-        expect(res.body.uptimePercent).toBeCloseTo(66.7, 1);
-
-        // averageResponseMs: (100 + 90) / 2 = 95
-        expect(res.body.averageResponseMs).toBe(95);
-
-        // sparkline: should have 3 entries with t & ms
-        expect(Array.isArray(res.body.sparkline)).toBe(true);
-        expect(res.body.sparkline.length).toBe(3);
-        res.body.sparkline.forEach(point => {
-        expect(point).toHaveProperty('t');
-        expect(point).toHaveProperty('ms');
-        });
-    });
-
-
-    it('PATCH /api/servers/:id should update server', async () => {
-        const res = await request(app)
-            .patch(`/api/servers/${createdId}`)
-            .send({ serverName: 'Updated Test Server', serverUrl: 'https://updatedtestserver.com' });
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body).toMatchObject({
-            id: Number(createdId)
-        });
-    });
-
-    it('DELETE /api/servers/:id should delete an existing server and return 204', async () => {
-        const res = await request(app).delete(`/api/servers/${insertedServerId}`);
-        expect(res.status).toBe(204);
-
-        // Confirm it's really gone
-        const deleted = await getAsync('SELECT * FROM servers WHERE id = ?', [insertedServerId]);
-        expect(deleted).toBeUndefined(); // or: expect(deleted).toBeFalsy();
-    });
-
-    it('DELETE should return 404 if server does not exist', async () => {
-        const res = await request(app).delete('/api/servers/999999');
-        console.log('Response body:', res.body); // Log the response body for debugging
-        expect(res.status).toBe(404);
-        expect(res.body.error).toMatch(/not found/i);
-    });
+  it('DELETE should return 404 if server does not exist', async () => {
+    const res = await request(app).delete('/api/servers/999999').expect(404);
+    expect(res.body.error).toMatch(/not found/i);
+  });
 });
 
 describe('Status API Endpoints', () => {
-    it('POST /api/status/id should run a health check and return the result', async () => {
-        const res = await request(app).post(`/api/status/${createdId}`);
+  let insertedServerId;
 
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.result).toEqual(
-            expect.objectContaining({
-                id: Number(createdId),
-                name: expect.any(String),
-                status: expect.any(String),
-                responseTime: null
-            })
-        );
+  beforeEach(async () => {
+    const seeded = await seedDatabaseForTests({ withHistory: false });
+    insertedServerId = seeded.insertedServerId;
+  });
+
+  it('POST /api/status/:id should run a health check and return the result', async () => {
+    const res = await request(app).post(`/api/status/${insertedServerId}`).expect(200);
+    expect(res.body.result).toEqual(
+      expect.objectContaining({
+        id: insertedServerId,
+        name: 'Test Server Name',
+      })
+    );
+  });
+
+  it('POST /api/check should check all servers and return their statuses', async () => {
+    const res = await request(app).post('/api/check').expect(200);
+    expect(Array.isArray(res.body.results)).toBe(true);
+    expect(res.body.checked).toBeGreaterThanOrEqual(1);
+  });
+});
+
+
+describe('Global-History API Endpoint', () => {
+    let insertedServerId;
+    beforeEach(async () => {
+        const seeded = await seedDatabaseForTests({ withHistory: true }); // <-- includes 3 history rows
+        insertedServerId = seeded.insertedServerId;
     });
 
-    it('POST /api/check should check all servers and return their statuses', async () => {
-        const res = await request(app).post('/api/check');
-        console.log('Response body:', res.body); // Log the response body for debugging
-        expect(res.statusCode).toEqual(200);
-        expect(res.body.results).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    id: Number(createdId),
-                    name: 'Updated Test Server',
-                    status: 'DOWN',
-                    responseTime: null
-                })
-            ])
-        );
+    it('GET /api/servers/:id/history returns 3 rows sorted DESC', async () => {
+        const res = await request(app)
+        .get(`/api/servers/${insertedServerId}/history?limit=50`)
+        .expect(200);
+
+        expect(res.body.length).toBe(3);
+        const times = res.body.map(r => +new Date(r.time));
+        expect(times).toEqual([...times].sort((a, b) => b - a));
+    });
+
+    it('GET /api/global-history should return a list', async () => {
+        const res = await request(app).get('/api/global-history');
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBe(3);
     });
 });

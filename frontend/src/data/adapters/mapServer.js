@@ -34,7 +34,9 @@ export function mapServersFromDB({ servers = [], serviceStatus = [] }) {
       const history = historyRows
           .map(row => Number(row.response_time ?? 0))
           .filter(n => Number.isFinite(n))
-          .slice(-24); // last 24h  
+          .slice(-24); // last 24h
+          
+      const lastChecked = latest?.timestamp ?? latest?.checked_at ?? null;
   
       return {
           id: String(serverId),
@@ -43,6 +45,7 @@ export function mapServersFromDB({ servers = [], serviceStatus = [] }) {
           status,
           responseTime,
           history: history.length ? history : Number.isFinite([responseTime]), // ensure at least one point
-      };
+          lastChecked
+        };
   });
 }

@@ -237,4 +237,40 @@ router.post('/check', (req, res) => {
 });
 });
 
+// Endpoint to fetch last N checks across all servers (GET /api/globel-hitstory)
+router.get('/global-history', (req, res) => {
+  const limit = (Math.min(100, Number(req.query.limit) || 10));
+  const statusFilter = req.query.status && req.query.status !== 'All' ? String(req.query.status) : null;
+
+  const where = [];
+  const params = [];
+
+  if (statusFilter) {
+    where.push("ss.status = ? COLLATE NOCASE");
+    params.push(statusFilter);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const sql = `
+    SELECT
+      strftime('%Y-%m-%dT%H:%M:%fZ', ss.timestamp) AS time,
+      s.name AS server,
+      ss.status
+    FROM service_status ss
+    JOIN servers s ON s.id = ss.server_id
+    ${whereSql}
+    ORDER BY ss.timestamp DESC
+    LIMIT ?`;
+
+  params.push(limit);
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
 module.exports = router;
