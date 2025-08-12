@@ -15,8 +15,7 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
   const [showEdit, setShowEdit] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('newest');
-
-  
+  const [latencyFilter, setLatencyFilter] = useState("ALL");  
   
   const load = useCallback(async () => {
     if(!serverId) return;
@@ -43,10 +42,27 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
   const filteredHistory = useMemo(() => {
     let data = Array.isArray(history) ? [...history] : [];
 
+    // Status filter
     if (statusFilter !== 'ALL') {
       data = data.filter(h => h.status === statusFilter);
     }
 
+    // Latency filter (if at leas one boud is provided)
+    if (latencyFilter !== "ALL") {
+    data = data.filter(h => {
+      const l = getRowLatency(h);
+      if (!Number.isFinite(l)) return false;
+
+      switch (latencyFilter) {
+        case "FAST":   return l < 100;
+        case "MEDIUM": return l >= 100 && l <= 500;
+        case "SLOW":   return l > 500;
+        default:       return true;
+      }
+    });
+  }
+
+    // Time sort 
     data.sort((a, b) => {
       const ta = getRowTs(a);
       const tb = getRowTs(b);
@@ -63,7 +79,7 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
     });
 
     return data;
-  }, [history, statusFilter, sortOrder]);
+  }, [history, statusFilter, sortOrder, latencyFilter]);
   
   useEffect(() => {
     load();
@@ -158,7 +174,21 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
                     </select>
                   </div>
                 </th>
-                <th>Response Time</th>
+                <th>
+                  Response Time
+                  <div>
+                    <select
+                      className="form-select form-select-sm mt-1"
+                      value={latencyFilter}
+                      onChange={e => setLatencyFilter(e.target.value)}
+                    >
+                      <option value="ALL">All</option>
+                      <option value="FAST">&lt; 100ms</option>
+                      <option value="MEDIUM">100–500ms</option>
+                      <option value="SLOW">&gt; 500ms</option>
+                    </select>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -221,10 +251,11 @@ function toMillis(ts) {
   return Number.isFinite(t) ? t : NaN;
 }
 
-function formatClock(tsLike) {
-  const t = toMillis(tsLike);
-  if (!Number.isFinite(t)) return '—';
-  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(t);
+// Normaliye latency field from API
+function getRowLatency(r) {
+  const v = r.response_time ?? r.responseMs ?? r.latencyMs ?? r.responseTime;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
 }
 
 function formatDateTime(tsLike) {
