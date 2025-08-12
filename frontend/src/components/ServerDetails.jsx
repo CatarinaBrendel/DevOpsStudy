@@ -7,6 +7,7 @@ import EditServerForm from './EditServerForm';
 import EditItemButton from './EditItemButton';
 import Modal from "./Modal";
 import DeleteItemButton from "./DeleteItemButton";
+import ExportButtons from "./ExportButtons";
 
 export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer }) {
   const [summary, setSummary] = useState(null);
@@ -81,6 +82,47 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
     return data;
   }, [history, statusFilter, sortOrder, latencyFilter]);
   
+  const exportData = useMemo(() => {
+    if(!summary) return null;
+
+    const latestRow = Array.isArray(history) && history.length ? history[0] : null;
+
+    // Build detailed rows: time, status, latency, httpStatus
+    const historyDetailed = (history || []).map((row) => ({
+      time: (() => {
+        const ms = getRowTs(row);
+        return Number.isFinite(ms) ? new Date(ms).toISOString() : "";
+      })(),
+      status: row.status ?? "UNKNOWN",
+      responseTimeMs: (() => {
+        const n = getRowLatency(row);
+        return Number.isFinite(n) ? n : null;
+      })(),
+      httpStatus: row.httpStatus ?? row.code ?? row.statusCode ?? null,
+    }));
+
+    return {
+      id: summary.server.id ?? serverId,
+      name: summary.server.name,
+      url: summary.server.url,
+      status: summary.server.status || latestRow?.status || "UNKNOWN",
+      httpStatus: latestRow?.httpStatus || latestRow?.statusCode,
+      responseTime: (() => {
+        const n = latestRow ? getRowLatency(latestRow) : NaN;
+        return Number.isFinite(n) ? n : null;
+      })(),
+      lastCheckedAt: 
+        summary.lastChecked ??
+        latestRow?.ts ??
+        latestRow?.timestamp ??
+        latestRow?.time ??
+        latestRow?.createdAt ??
+        latestRow?.checked_at,
+      // history for CSV/XLSX (just numbers)
+      historyDetailed,
+    };
+  }, [summary, history, serverId]);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -227,6 +269,11 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
           <DeleteItemButton
               itemName={summary.server.name}
               onConfirm={() => onDeleteServer?.(serverId)}
+            />
+            <ExportButtons
+              server={exportData}
+              filenameBase={`server-${serverId}`}
+              onExport={(type) => console.log(`Exported ${type}`)}
             />
         </div>
       </div>
