@@ -265,15 +265,15 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
         </div>
       </div>
       <div className="d-flex justify-content-between align-items-center mb-2">
-        <div className="ms-auto">
-          <DeleteItemButton
-              itemName={summary.server.name}
-              onConfirm={() => onDeleteServer?.(serverId)}
-            />
-            <ExportButtons
+        <div className="d-flex ms-auto gap-2">
+          <ExportButtons
               server={exportData}
               filenameBase={`server-${serverId}`}
               onExport={(type) => console.log(`Exported ${type}`)}
+            />
+          <DeleteItemButton
+              itemName={summary.server.name}
+              onConfirm={() => onDeleteServer?.(serverId)}
             />
         </div>
       </div>

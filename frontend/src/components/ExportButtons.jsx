@@ -16,9 +16,9 @@ export default function ExportButtons({ server, filenameBase, onExport }) {
   };
 
   return (
-    <div className="export-buttons">
-          <button className="btn btn-outline-primary" onClick={handleCSV}>Export CSV</button>
-          <button className="btn btn-outline-primary" onClick={handleXLSX}>Export Excel</button>
+    <div className="d-flex export-buttons gap-2">
+          <button className="btn btn-outline-primary btn-sm" onClick={handleCSV}>Export CSV</button>
+          <button className="btn btn-outline-primary btn-sm" onClick={handleXLSX}>Export Excel</button>
     </div>
   );
 }
