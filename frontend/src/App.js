@@ -3,7 +3,7 @@ import {toast, ToastContainer} from 'react-toastify';
 import './App.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import Sidebar from './components/Sidebar';
-import { fetchSidebarItems } from './data/loadServers';
+import { onFetchSidebarItems, triggerCheck, onAddServer, onUpdateServer, onDeleteServer, onRefreshAll } from './data/api';
 import ServerDetails from './components/ServerDetails';
 import EmptyServerState from './components/EmptyServerState';
 
@@ -13,32 +13,52 @@ function App() {
   const [servers, setServers] = useState([]);
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [isRefreshAll, setIsRefreshingAll] = useState(false);
+  const [checkingId, setCheckingId] = useState(null);
   
   //Load servers from API
   useEffect(() => {
-    fetchServers();
+      fetchServers();
   }, []);
 
   const fetchServers = async () => {
-    try {
-      //const response = await fetch(`${API_BASE}/servers`);
-      //const data = await response.json();
+      try {
+        const data = await onFetchSidebarItems();
+        setServers(Array.isArray(data) ? data: []);
+        return data;
+      } catch (error) {
+        console.error('Error fetching servers:', error);
+      }
+  };  
 
-      const data = await fetchSidebarItems();
-      setServers(Array.isArray(data) ? data: []);
-      return data;
-    } catch (error) {
-      console.error('Error fetching servers:', error);
+  const handleTriggerCheck = async (serverId) => {
+    if (!serverId || checkingId) return;
+    setCheckingId(serverId);
+    
+    try {
+      await triggerCheck(serverId);
+
+      await fetchServers();
+      
+      toast.success(`Server status was refreshed successfully.`, {
+        position: 'top-right',
+        autoClose: 3000
+      })
+
+    } catch (err) {
+      console.error("Error triggering health check:", err);
+      toast.error(`Server status wasn't able to be refreshed.`, {
+        position: 'top-right',
+        autoClose: 3000
+      })
+    } finally {
+      setCheckingId(null);
     }
-};  
+  };
 
   const handleAddServer = async ({serverName, serverUrl}) => {
     try {
-      await fetch(`${API_BASE}/servers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serverName, serverUrl }),
-      });
+      console.log(`servername: ${serverName}, serverurl: ${serverUrl}`);
+      await onAddServer(serverName, serverUrl);
       
       await fetchServers();
       setSelectedServerId(null);
@@ -59,12 +79,7 @@ function App() {
 
   const handleUpdateServer = async (id, updatedData) => {
     try {
-      await fetch(`${API_BASE}/servers/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
-      });
-      
+      await onUpdateServer(id, updatedData);
       await fetchServers();
       setSelectedServerId(null);
       
@@ -84,10 +99,7 @@ function App() {
   
   const handleDeleteServer = async (id) => {
     try {
-      await fetch(`${API_BASE}/servers/${id}`, {
-        method: 'DELETE',
-      });
-      
+      await onDeleteServer(id);
       await fetchServers();
 
       toast.success(`Server deleted successfully.`, {
@@ -108,11 +120,7 @@ function App() {
     setIsRefreshingAll(true);
 
     try {
-      await fetch(`${API_BASE}/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
+      await onRefreshAll();
 
       await fetchServers();
 
@@ -148,6 +156,8 @@ function App() {
           <ServerDetails 
             serverId={selectedServerId}
             onUpdateServer={handleUpdateServer}
+            onTriggerCheck={handleTriggerCheck}
+            isTriggering={checkingId === selectedServerId}
             onDeleteServer={async (id) => {
               await handleDeleteServer(id);
               setSelectedServerId((prev) => (prev === id ? null : prev));

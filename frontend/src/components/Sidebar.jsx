@@ -109,7 +109,7 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer, o
                         <button type="button" className= "btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
                         </div>
                     </form>
-                    </Modal>
+                </Modal>
             </div>
         </aside>
     );

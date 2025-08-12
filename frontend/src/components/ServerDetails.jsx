@@ -1,7 +1,6 @@
 import React, {useEffect, useState, useCallback, useMemo} from "react";
 import TrendChart from "./TrendChart";
-import { loadHistory } from "../data/loadHistory";
-import { loadSummary } from "../data/loadSummary";
+import { loadSummary, loadHistory } from "../data/api.js";
 import RefreshItemButton from "./RefreshItemButton";
 import EditServerForm from './EditServerForm';
 import EditItemButton from './EditItemButton';
@@ -9,14 +8,15 @@ import Modal from "./Modal";
 import DeleteItemButton from "./DeleteItemButton";
 import ExportButtons from "./ExportButtons";
 
-export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer }) {
+export default function ServerDetails({ serverId, onTriggerCheck, isTriggering, onUpdateServer, onDeleteServer }) {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('newest');
-  const [latencyFilter, setLatencyFilter] = useState("ALL");  
+  const [latencyFilter, setLatencyFilter] = useState("ALL");
+  const [refreshing, setRefreshing] = useState(false);  
   
   const load = useCallback(async () => {
     if(!serverId) return;
@@ -38,6 +38,19 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
     await onUpdateServer?.(serverId, {serverName: name, serverUrl: url});
     setShowEdit(false);
     load();
+  };
+
+  const handleRefreshClick = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await onTriggerCheck?.(serverId);
+      await load();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
   };
   
   const filteredHistory = useMemo(() => {
@@ -145,7 +158,10 @@ export default function ServerDetails({ serverId, onUpdateServer, onDeleteServer
       <div className="d-flex justify-content-between align-items-center mb-2">
         <h3 className="mb-1">Server Details</h3>
         <div className="ms-auto">
-            <RefreshItemButton serverId={serverId} onRefresh={load} />
+            <RefreshItemButton 
+              onClick={handleRefreshClick}
+              loading={isTriggering}
+            />
         </div>
       </div>
       <div className="d-flex justify-content-between align-items-center mb-2">
