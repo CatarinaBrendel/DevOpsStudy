@@ -49,6 +49,23 @@ build:
 deploy:
 	docker compose down && docker compose build --no-cache && docker compose up
 
+# --- Frontend shortcuts ---
+front:
+	$(COMPOSE) up -d frontend
+
+front-build:           # rebuild just FE image & restart that container
+	$(COMPOSE) up -d --no-deps --build frontend
+
+front-restart:
+	$(COMPOSE) restart frontend
+
+front-logs:
+	$(COMPOSE) logs -f --tail=200 frontend
+
+front-watch:           # if your Docker supports compose watch
+	$(COMPOSE) watch frontend
+
+
 # ---- Inspect / Logs ----
 ps:
 	$(COMPOSE) ps

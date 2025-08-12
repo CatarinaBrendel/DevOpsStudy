@@ -1,0 +1,14 @@
+version: '3.8'
+# in docker-compose.override.yml
+services:
+  frontend:
+    develop:
+      watch:
+        - path: ./frontend/src
+          action: sync
+          target: /app/src
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/package-lock.json
+          action: rebuild
+
