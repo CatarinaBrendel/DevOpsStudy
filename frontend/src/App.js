@@ -12,6 +12,7 @@ const API_BASE = 'http://localhost:3001/api';
 function App() {
   const [servers, setServers] = useState([]);
   const [selectedServerId, setSelectedServerId] = useState(null);
+  const [isRefreshAll, setIsRefreshingAll] = useState(false);
   
   //Load servers from API
   useEffect(() => {
@@ -42,7 +43,7 @@ function App() {
       await fetchServers();
       setSelectedServerId(null);
 
-      toast.success(`Server "${serverName}" added successfully`, {
+      toast.success(`Server "${serverName}" added successfully.`, {
         position: 'top-right',
         autoClose: 3000
       });
@@ -67,7 +68,7 @@ function App() {
       await fetchServers();
       setSelectedServerId(null);
       
-      toast.success(`Server "${updatedData.serverName}" updated successfully`, {
+      toast.success(`Server "${updatedData.serverName}" updated successfully.`, {
         position: 'top-right',
         autoClose: 3000
       });
@@ -87,9 +88,9 @@ function App() {
         method: 'DELETE',
       });
       
-      fetchServers();
+      await fetchServers();
 
-      toast.success(`Server deleted successfully`, {
+      toast.success(`Server deleted successfully.`, {
         position: 'top-right',
         autoClose: 3000
       });
@@ -103,16 +104,30 @@ function App() {
     }
   };
 
-  const handleCheckServer = async (id) => {
+  const handleRefreshAll = async () => {
+    setIsRefreshingAll(true);
+
     try {
       await fetch(`${API_BASE}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({}),
       });
-      fetchServers();
+
+      await fetchServers();
+
+      toast.success(`Servers have been refreshed`, {
+        position: 'top-right',
+        autoClose: 300
+      });
     } catch (err) {
       console.error('Error checking server:', err);
+      toast.error(`Servers failed to be refreshed. Please try again.`, {
+        position: 'top-right',
+        autoClose: 300
+      });
+    } finally {
+      setIsRefreshingAll(false);
     }
   };
 
@@ -124,6 +139,8 @@ function App() {
           selectedId={selectedServerId} 
           onSelect={setSelectedServerId} 
           onAddServer={handleAddServer}
+          onRefreshAll={handleRefreshAll}
+          refreshing={isRefreshAll}
           />
       </div>
       <main className="app-main">

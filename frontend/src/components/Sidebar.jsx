@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchSidebarItems } from "../data/loadServers";
 import Sparkline from './Sparkline';
 import Modal from './Modal';
 
@@ -16,7 +15,7 @@ const StatusDot = ({ status }) => (
     <span className={`dot dot--${status}`} aria-label={status} />
 );
 
-export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) {
+export default function Sidebar({ items=[], selectedId, onSelect, onAddServer, onRefreshAll, refreshing=false}) {
     //const [servers, setServers] = useState(items);
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');   
@@ -87,6 +86,7 @@ export default function Sidebar({ items=[], selectedId, onSelect, onAddServer}) 
             </nav>
             <div className="sidebar__footer">
                 <button type="button" className="btn btn-light " onClick={() => setShowModal(true)}> + Add Server</button>
+                <button type="button" className="btn btn-light" onClick={() => onRefreshAll()} disabled={refreshing} aria-busy={refreshing || undefined}>{refreshing ? "Refreshing…" : "↻ Refresh All"}</button>
                 <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
                     <h3>Add New Server</h3>
                     <form onSubmit={handleClick}>
