@@ -77,3 +77,8 @@ export async function loadGlobalHistory() {
   const res = await api.get(`/global-history`);
   return res.data;
 }
+
+export async function loadServers() {
+  const { data } = await api.get('/servers');
+  return data;
+}

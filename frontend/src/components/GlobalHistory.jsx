@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useState, useMemo} from "react";
-import { loadGlobalHistory } from "../data/api";
 
 export default function GlobalHistory({historyData, servers=[], onRefresh, loading, error, refreshTrigger}) {
   // Filters
@@ -7,11 +6,24 @@ export default function GlobalHistory({historyData, servers=[], onRefresh, loadi
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'up' | 'down' | 'warn'
   const [serverFilter, setServerFilter] = useState(""); // '' = all
 
+   const serverOptions = useMemo (() => {
+    const fromProp = servers.map(s => (typeof s === "string" ? s : s?.name)).filter(Boolean);
+    const fromHistory = historyData.map(h => h?.server).filter(Boolean);
+    const unique = Array.from(new Set([...fromProp, ...fromHistory]));
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  }, [servers, historyData]);
+
   useEffect(() => {
       setTimeOrder("desc");
       setStatusFilter("all");
       setServerFilter("");
     }, [refreshTrigger]);
+
+  useEffect(() => {
+    if (serverFilter && !serverOptions.includes(serverFilter)) setServerFilter("");
+  }, [serverOptions, serverFilter]);
+
 
   const formatRelative = (time) => {
     const diff = Math.floor((Date.now() - new Date(time)) / 1000);
@@ -109,7 +121,7 @@ export default function GlobalHistory({historyData, servers=[], onRefresh, loadi
               style={{ minWidth: 110 }}
             >
               <option value="">All servers</option>
-              {servers.map(s => <option key={s} value={s}>{s}</option>)}
+              {serverOptions.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
