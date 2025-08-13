@@ -9,14 +9,14 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', serverRoutes);
 
-// Serve frontend build (placed in ../public by the Dockerfile below)
-const publicDir = path.join(__dirname, '..', 'public');
-app.use(express.static(publicDir));
+if (process.env.NODE_ENV === 'production') {
+  const publicPath = path.join(__dirname, 'public');
+  app.use(express.static(publicPath));
 
-// SPA fallback for client-side routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
-
+  // Fallback for React Router (SPA)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
 
 module.exports = app;

@@ -2,7 +2,11 @@
 import axios from "axios";
 import {mapServersFromDB} from './adapters/mapServer';
 
-const API_BASE = 'http://localhost:3001/api';
+// Use relative URL in production so frontend + backend can be served together
+const API_BASE =
+  process.env.NODE_ENV === "production"
+    ? "/api"
+    : "http://localhost:3001/api";
 
 // Reusable axios instance
 const api = axios.create({

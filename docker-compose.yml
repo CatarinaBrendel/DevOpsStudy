@@ -2,13 +2,14 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build: .
     container_name: backend
     volumes:
       - ./data:/data
     ports:
       - "3001:3001"
     restart: always
+
   sqlite:
     image: nouchka/sqlite3
     platform: linux/amd64
@@ -18,13 +19,3 @@ services:
     working_dir: /app/data
     entrypoint: ["sh"]
     tty: true
-
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: always
-

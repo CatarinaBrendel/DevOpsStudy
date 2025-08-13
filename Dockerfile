@@ -1,25 +1,29 @@
-# ---------- FRONTEND BUILD ----------
-FROM node:20 AS frontend
+# ===== FRONTEND BUILD STAGE =====
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# ---------- BACKEND ----------
-FROM node:20 AS backend
-WORKDIR /app/backend
+# ===== BACKEND STAGE =====
+FROM node:22-bookworm-slim
+WORKDIR /app
+
+# Copy backend package files & install deps
 COPY backend/package*.json ./
 RUN npm install
+
+# Copy backend source
 COPY backend/ ./
 
-# Copy frontend build into backend's static/public folder
-COPY --from=frontend /app/frontend/build ./public
+# Copy frontend build into backend public folder
+COPY --from=frontend-builder /app/frontend/build ./public
 
-# Create a volume mount point for SQLite DB (optional for Render)
-VOLUME ["/data"]
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
 
-# Expose backend port
 EXPOSE 3001
 
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
