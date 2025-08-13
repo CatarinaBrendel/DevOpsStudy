@@ -204,31 +204,12 @@ router.patch('/servers/:id', (req, res, next) => {
 router.delete('/servers/:id', (req, res, next) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid id' });
-    
-    if (isPg) {
-    // Single roundtrip, atomic in PG
-      const sql = `
-        WITH del_ss AS (
-          DELETE FROM service_status WHERE server_id = ?  -- $1
-        ),
-        del_srv AS (
-          DELETE FROM servers WHERE id = ? RETURNING id   -- $2
-        )
-        SELECT id FROM del_srv
-      `;
-      // NOTE: pass params as an ARRAY
-      db.all(sql, [id, id], (err, rows) => {
-        if (err) return next(err);
-        if (!rows || rows.length === 0) return res.status(404).json({ error: 'Server not found' });
-        return res.status(204).send();
-      });
-    } else {
-      db.run('DELETE FROM servers WHERE id = ?', [id], function (err) {
-        if (err) return next(err);
-        if (this.changes === 0) return res.status(404).json({ error: 'Server not found' });
-        res.status(204).send();
-      });
-    }
+
+    db.run('DELETE FROM servers WHERE id = ?', [id], function (err) {
+      if (err) return next(err);
+      if (this.changes === 0) return res.status(404).json({ error: 'Server not found' });
+      res.status(204).send();
+  });
 });
 
 // Endpoint to get all service statuses (GET /api/status)

@@ -30,7 +30,7 @@ async function ensureSchema() {
          )`,
         `CREATE TABLE IF NOT EXISTS service_status (
            id BIGSERIAL PRIMARY KEY,
-           server_id BIGINT NOT NULL REFERENCES servers(id),
+           server_id BIGINT NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
            status TEXT NOT NULL,
            response_time INTEGER,
            "timestamp" TIMESTAMPTZ DEFAULT now()
