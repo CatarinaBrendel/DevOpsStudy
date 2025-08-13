@@ -26,6 +26,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
     },
   },
+  crossOriginResourcePolicy: {policy: 'cross-origin'},
 }));
 
 // Middleware
