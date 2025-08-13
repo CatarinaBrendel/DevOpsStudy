@@ -68,3 +68,8 @@ export async function onDeleteServer(id) {
 export async function onRefreshAll() {
   await api.post("/check", {}, noStore());
 }
+
+export async function loadGlobalHistory() {
+  const res = await api.get(`/global-history`);
+  return res.data;
+}

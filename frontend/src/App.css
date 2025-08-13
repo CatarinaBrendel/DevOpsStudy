@@ -11,8 +11,10 @@ html, body {
 .app-shell {
   height: 100dvh;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  overflow: visible;
+  grid-template-columns: 280px minmax(0, 1fr) 360px;
+  gap: 16px;
+  padding: 12px;
+  overflow: hidden; /* prevents double scrollbars */
 }
 
 .app-sidebar {
@@ -36,6 +38,20 @@ html, body {
   overflow: auto;
   min-width: 0;
   scrollbar-gutter: stable both edges;
+}
+
+/* new: right rail */
+.app-right {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100dvh;
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(16,24,40,.06);
 }
 
 /* src/components/sidebar.css */
@@ -257,6 +273,19 @@ html, body {
 
 .modal-buttons button {
   cursor: pointer;
+}
+
+/* Responsive: collapse right rail under main on small screens */
+@media (max-width: 992px) {
+  .app-shell {
+    grid-template-columns: 1fr;    /* stack */
+  }
+  .app-right {
+    position: static;
+    height: auto;
+    overflow: visible;
+    margin-top: 12px;
+  }
 }
 
 /* Optional: responsive collapse */

@@ -164,7 +164,6 @@ describe('Status API Endpoints', () => {
   });
 });
 
-
 describe('Global-History API Endpoint', () => {
     let insertedServerId;
     beforeEach(async () => {
