@@ -194,15 +194,14 @@ Returns the detailed history for a server.
 
 ---
 
-## ✍️ **Design notes**
- Design notes (what this project demonstrates)
-Dual-dialect DB adapter with identical API (all/get/run/close) so routes don’t care which DB is behind them.
-Dialect-aware SQL where needed:
-Time formatting (strftime vs to_char(... AT TIME ZONE 'UTC', …))
-Reserved identifiers (Postgres "timestamp")
-Case-insensitive compares (LOWER(col) = LOWER(?))
-Secure defaults (CSP via Helmet, CORP), with practical allowances for SPAs.
-Deployment-friendly SPA/Express layout (API first; catch-all last).
+## ✍️ Design notes (what this project demonstrates)
+- Dual-dialect DB adapter with identical API (all/get/run/close) so routes don’t care which DB is behind them.
+- Dialect-aware SQL where needed:
+- Time formatting (strftime vs to_char(... AT TIME ZONE 'UTC', …))
+- Reserved identifiers (Postgres "timestamp")
+- Case-insensitive compares (LOWER(col) = LOWER(?))
+- Secure defaults (CSP via Helmet, CORP), with practical allowances for SPAs.
+- Deployment-friendly SPA/Express layout (API first; catch-all last).
 
 ---
 
