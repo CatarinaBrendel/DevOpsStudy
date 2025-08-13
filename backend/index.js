@@ -1,23 +1,30 @@
+// server.js (or index.js)
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
-const ensureSchema = require('./db/init');
 const app = require('./app');
+const { ensureSchema } = require('./db/init');
 
 const port = process.env.PORT || 3001;
+const host = '0.0.0.0';
 
-
-//Only initialize DB if not running in test mode
-(async () => {
+async function start() {
   if (process.env.NODE_ENV !== 'test') {
-    await ensureSchema().catch(err => {
+    try {
+      await ensureSchema();            // ✅ ensure tables exist first
+      console.log('DB schema ready.');
+    } catch (err) {
       console.error('Failed to init schema:', err);
       process.exit(1);
-    });
+    }
   }
-}); 
+
+  app.listen(port, host, () => {
+    console.log(`Service Status Dashboard API running at http://${host}:${port}`);
+  });
+}
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Service Status Dashboard API running at http://localhost:${port}`);
-  });
-}  
+  start();
+}
+
+module.exports = app;
