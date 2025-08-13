@@ -5,21 +5,26 @@ A sleek, responsive **React + Bootstrap** web application for monitoring server 
 
 This dashboard gives you **real-time visibility** into all your servers at a glance and keeps you informed with toast notifications for key events.
 
+Live demo: https://service-status-dashboard.onrender.com
+
 ---
 
 ## ✨ Features
 
 - **📡 Live Monitoring**  
-  Auto-refresh every 60 seconds to keep metrics up-to-date.
+  One-click “Check now” for a single server or Check all
+  Add/edit/delete monitored servers (name + URL)
   
 - **🔍 Search & Filter**  
   Quickly find servers by name or filter by status (`Up`, `Down`, `Warn`).
 
 - **📜 Server History**  
   Detailed uptime/response history with date & time formatting and a fixed table header for easy scrolling.
+   Per-server summary: uptime %, average latency, sparkline
 
 - **🖱 Interactive Sidebar**  
   Sticky sidebar with quick server selection and sparklines showing recent performance trends.
+  Global History with filters (time, status, server)
 
 - **📢 Toast Notifications**  
   Instant feedback when servers are **added** or **deleted**.
@@ -27,11 +32,15 @@ This dashboard gives you **real-time visibility** into all your servers at a gla
 - **🖌 Clean UI**  
   Built with Bootstrap 5 and responsive layout principles for a professional look.
 
+- **⚖️ Dual Database**
+  SQLite for dev/tests, PostgreSQL for production
+
 ---
 
 ## 🖼 UI Preview
 
-> *Main view with empty state when no server is selected.*
+<img width="2940" height="1912" alt="image" src="https://github.com/user-attachments/assets/e01d175a-9fd3-4463-9a67-74877887ea54" />
+
 
 ---
 
@@ -57,11 +66,12 @@ npm npm start
 
 ## 🛠 Tech Stack
 
-- **React** – Component-based UI
-- **Bootstrap 5** – Styling and layout
-- **Bootstrap Icons** – Consistent iconography
-- **React-Toastify** – Notifications
-- **Fetch API** – Server communication
+**Frontend**: React (SPA), Axios, Bootstrap (light classes)
+**Backend**: Node.js + Express
+**DB**: SQLite (dev/tests) and PostgreSQL (prod) via a tiny adapter
+**Hosting**: Render (Web Service + Managed Postgres)
+**Tests**: Jest + supertest (API)
+**Security**: Helmet (CSP, CORP), CORS (if split frontend/backend)
 
 --
 
@@ -77,6 +87,17 @@ npm npm start
 ## 🏗 Architecture Overview
 The app follows a component-driven architecture:
 ```pgsql
+*Backend*
+React SPA  ──(fetch /api/*)──► Express
+                             ├── servers (CRUD)
+                             ├── global-history & per-server history
+                             ├── run checks (fetch URL, capture status/latency)
+                             └── summary (uptime %, avg response, sparkline)
+DB adapter
+  ├─ SQLite (dev/tests) file db              ← DB_PATH
+  └─ Postgres (Render prod) pooled connection← DATABASE_URL
+
+*Frontend*
 App
  ├── Sidebar
  │    ├── Search Input
@@ -173,11 +194,15 @@ Returns the detailed history for a server.
 
 ---
 
-## 📌 Roadmap
- - [ ] Server grouping / tagging
- - [ ] Customizable refresh interval
- - [ ] Export history to CSV
- - [ ] Dark mode support
+## ✍️ **Design notes**
+ Design notes (what this project demonstrates)
+Dual-dialect DB adapter with identical API (all/get/run/close) so routes don’t care which DB is behind them.
+Dialect-aware SQL where needed:
+Time formatting (strftime vs to_char(... AT TIME ZONE 'UTC', …))
+Reserved identifiers (Postgres "timestamp")
+Case-insensitive compares (LOWER(col) = LOWER(?))
+Secure defaults (CSP via Helmet, CORP), with practical allowances for SPAs.
+Deployment-friendly SPA/Express layout (API first; catch-all last).
 
 ---
 
