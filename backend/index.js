@@ -1,3 +1,5 @@
+if (process.env.NODE_ENV !== 'production') require('dotenv').config();
+
 const initializeDatabase = require('./db/init');
 const app = require('./app');
 
