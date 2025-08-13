@@ -1,6 +1,7 @@
 const initializeDatabase = require('./db/init');
 const app = require('./app');
-const port = 3001;
+
+const port = process.env.PORT || 3001;
 
 
 //Only initialize DB if not running in test mode
