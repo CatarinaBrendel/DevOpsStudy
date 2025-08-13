@@ -244,23 +244,32 @@ router.get('/global-history', (req, res) => {
 
   const where = [];
   const params = [];
+  const isPg = !!process.env.DATABASE_URL;
 
   if (statusFilter) {
-    where.push("ss.status = ? COLLATE NOCASE");
+    where.push('LOWER(ss.status) = LOWER(?)');
     params.push(statusFilter);
   }
 
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
+  // Time expression + order column per dialect
+  const timeExpr = isPg
+    ? `to_char(ss."timestamp" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`
+    : `strftime('%Y-%m-%dT%H:%M:%fZ', ss.timestamp)`;
+
+  const orderCol = isPg ? `ss."timestamp"` : `ss.timestamp`;
+
+
   const sql = `
     SELECT
-      strftime('%Y-%m-%dT%H:%M:%fZ', ss.timestamp) AS time,
+      ${timeExpr} AS time,
       s.name AS server,
       ss.status
     FROM service_status ss
     JOIN servers s ON s.id = ss.server_id
     ${whereSql}
-    ORDER BY ss.timestamp DESC
+    ORDER BY ${orderCol} DESC
     LIMIT ?`;
 
   params.push(limit);
