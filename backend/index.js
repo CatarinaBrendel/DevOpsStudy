@@ -1,15 +1,20 @@
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
-const initializeDatabase = require('./db/init');
+const ensureSchema = require('./db/init');
 const app = require('./app');
 
 const port = process.env.PORT || 3001;
 
 
 //Only initialize DB if not running in test mode
-if (process.env.NODE_ENV !== 'test') {
-  initializeDatabase();
-}
+(async () => {
+  if (process.env.NODE_ENV !== 'test') {
+    await ensureSchema().catch(err => {
+      console.error('Failed to init schema:', err);
+      process.exit(1);
+    });
+  }
+}); 
 
 if (require.main === module) {
   app.listen(port, () => {
