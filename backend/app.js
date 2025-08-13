@@ -1,9 +1,32 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const app = express();
 const serverRoutes = require('./routes/serverRoutes');
+
+// --- CSP: allow self, two inline scripts, favicon/images, and API calls ---
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU='",
+        "'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM='",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'"],       // keep if you have inline styles
+      imgSrc: ["'self'", "data:"],                   // unblocks /favicon.ico
+      connectSrc: ["'self'"],                        // add API origin here if different domain
+      fontSrc: ["'self'"],
+      baseUri: ["'self'"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+}));
 
 // Middleware
 app.use(cors());
