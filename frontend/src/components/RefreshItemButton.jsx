@@ -1,8 +1,3 @@
-import { useState} from "react";
-import axios from "axios";
-
-const API_BASE = 'http://localhost:3001/api';
-
 export default function RefreshItemButton ({onClick, loading}) {
     return (
         <button

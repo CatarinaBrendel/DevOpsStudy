@@ -237,7 +237,7 @@ router.post('/check', (req, res) => {
 });
 });
 
-// Endpoint to fetch last N checks across all servers (GET /api/globel-hitstory)
+// Endpoint to fetch last N checks across all servers (GET /api/global-hitstory)
 router.get('/global-history', (req, res) => {
   const limit = (Math.min(100, Number(req.query.limit) || 10));
   const statusFilter = req.query.status && req.query.status !== 'All' ? String(req.query.status) : null;
